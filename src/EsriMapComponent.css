@@ -2,4 +2,26 @@
     height: 500px;
   }
 
+  .map-container {
+    height: 500px;
+    width: 100%;
+    position: relative;
+  }
   
+  .esri-popup {
+    position: absolute !important;
+    z-index: 1000 !important;
+    background-color: white; /* Set the background color you desire */
+    border: 1px solid #ccc; /* Add border if needed */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add box shadow for depth */
+  }
+  
+  /* Customize the content area background */
+  .esri-popup__main-container {
+    background-color: white; /* Set the background color you desire */
+  }
+  
+  /* Customize the arrow color (if applicable) */
+  .esri-popup__pointer {
+    border-bottom-color: white; /* Set the arrow color to match the background */
+  }
