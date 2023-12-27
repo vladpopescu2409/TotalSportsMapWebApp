@@ -1,71 +1,109 @@
+// Config.apiKey = 'AAPK3d737cc3995b41de949427b52d04f894Ujr4K1pyTeeqmvTK161wvqE6yVRI_bv7MLOWyOrKzXhG9DaHWeR4T-cXQfIGgmEW';
 import React, { useEffect, useRef } from 'react';
 import WebMap from '@arcgis/core/WebMap';
 import MapView from '@arcgis/core/views/MapView';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import Graphic from '@arcgis/core/Graphic';
 import Config from '@arcgis/core/config';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
-
 import './EsriMapComponent.css';
+
 
 const EsriMapComponent = () => {
   const mapViewNode = useRef(null);
   const mapLoaded = useRef(false);
   const mapView = useRef(null);
 
-  useEffect(() => {
-    const initializeMap = async () => {
-      try {
-        if (mapLoaded.current) return;
+  const showUserLocation = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const point = {
+            type: 'point',
+            longitude: longitude,
+            latitude: latitude,
+          };
 
-        Config.apiKey = 'AAPK3d737cc3995b41de949427b52d04f894Ujr4K1pyTeeqmvTK161wvqE6yVRI_bv7MLOWyOrKzXhG9DaHWeR4T-cXQfIGgmEW';
-
-        const popupFootballFields = new PopupTemplate({
-          title: '{name}',
-          content: [
-            {
-              type: 'fields',
-              fieldInfos: [
-                { fieldName: 'id', label: 'ID', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-                { fieldName: 'description', label: 'Sport', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-                { fieldName: 'Address', label: 'Address', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-                { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-                { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-                { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-                { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true, tooltip: '', format: null, stringFieldOption: 'text-box' },
-              ],
+          const markerGraphic = new Graphic({
+            geometry: point,
+            symbol: {
+              type: 'simple-marker',
+              color: 'blue',
+              size: 8,
             },
-          ],
-        });
+          });
 
-        const map = new WebMap({
-          basemap: 'arcgis/navigation',
-        });
+          mapView.current.graphics.add(markerGraphic);
+          mapView.current.goTo(point);
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported');
+    }
+  };
 
-        const footballLayer = new FeatureLayer({
-          url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/ArcGIS/rest/services/Baze_Sportive/FeatureServer',
-          outFields: ['OBJECTID', 'name', 'Address', 'id', 'Facilities', 'description', 'Price', 'PhoneNumber', 'No_fields'],
-          popupTemplate: popupFootballFields,
-        });
+  const initializeMap = async () => {
+    try {
+      if (mapLoaded.current) return;
 
-        map.add(footballLayer, 0);
+      Config.apiKey = 'AAPK3d737cc3995b41de949427b52d04f894Ujr4K1pyTeeqmvTK161wvqE6yVRI_bv7MLOWyOrKzXhG9DaHWeR4T-cXQfIGgmEW';
 
-        mapView.current = new MapView({
-          container: mapViewNode.current,
-          center: [26.1025, 44.4268],
-          zoom: 12,
-          map: map,
-        });
+      const popupFootballFields = new PopupTemplate({
+        title: '{name}',
+        content: [
+          {
+            type: 'fields',
+            fieldInfos: [
+              { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
+              { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
+              { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
+              { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
+              { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
+              { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
+              { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
+            ],
+          },
+          {
+            type: 'attachments',
+            content: '<img src="{attachmentInfos[0].url}" alt="Attachment"/>', // Displaying the first attachment as an image
+          },
+        ],
+      });
 
-        mapView.current.on('error', (error) => console.error('MapView error:', error));
+      const map = new WebMap({
+        basemap: 'arcgis/navigation',
+      });
 
-        await mapView.current.when();
-        console.log('ArcGIS map loaded');
-        mapLoaded.current = true;
-      } catch (error) {
-        console.error('EsriLoader: ', error);
-      }
-    };
+      const footballLayer = new FeatureLayer({
+        url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/ArcGIS/rest/services/Baze_Sportive/FeatureServer',
+        outFields: ['OBJECTID', 'name', 'Address', 'id', 'Facilities', 'description', 'Price', 'PhoneNumber', 'No_fields'],
+        popupTemplate: popupFootballFields, // Assign the PopupTemplate to the FeatureLayer
+      });
 
+      map.add(footballLayer);
+
+      mapView.current = new MapView({
+        container: mapViewNode.current,
+        center: [26.1025, 44.4268],
+        zoom: 12,
+        map: map,
+      });
+
+      mapView.current.on('error', (error) => console.error('MapView error:', error));
+
+      await mapView.current.when();
+      console.log('ArcGIS map loaded');
+      mapLoaded.current = true;
+    } catch (error) {
+      console.error('EsriLoader: ', error);
+    }
+  };
+
+  useEffect(() => {
     initializeMap();
 
     return () => {
@@ -75,7 +113,26 @@ const EsriMapComponent = () => {
     };
   }, []);
 
-  return <div ref={mapViewNode} className="map-container"></div>;
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', marginTop: '50px' }}>
+      <div
+        ref={mapViewNode}
+        className="map-container"
+        style={{ position: 'absolute', top: '10px', width: '100%', height: 'calc(100% - 50px)' }}
+      ></div>
+      <button
+        onClick={showUserLocation}
+        style={{
+          position: 'absolute',
+          bottom: '-10px',
+          right: '30px',
+          zIndex: '1001',
+        }}
+      >
+        Show My Location
+      </button>
+    </div>
+  );
 };
 
 export default EsriMapComponent;
