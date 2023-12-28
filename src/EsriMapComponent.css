@@ -25,3 +25,18 @@
   .esri-popup__pointer {
     border-bottom-color: white; /* Set the arrow color to match the background */
   }
+
+  .map-button {
+    background-color: #0079c1;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .map-button:hover {
+    background-color: #005fa3;
+  }

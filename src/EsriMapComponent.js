@@ -6,6 +6,8 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Config from '@arcgis/core/config';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
+import '@arcgis/core/assets/esri/themes/light/main.css'; // Import the ArcGIS CSS
+
 import './EsriMapComponent.css';
 
 
@@ -13,6 +15,7 @@ const EsriMapComponent = () => {
   const mapViewNode = useRef(null);
   const mapLoaded = useRef(false);
   const mapView = useRef(null);
+
 
   const showUserLocation = () => {
     if ('geolocation' in navigator) {
@@ -45,7 +48,7 @@ const EsriMapComponent = () => {
       console.error('Geolocation is not supported');
     }
   };
-
+  
   const initializeMap = async () => {
     try {
       if (mapLoaded.current) return;
@@ -93,6 +96,8 @@ const EsriMapComponent = () => {
         map: map,
       });
 
+      await mapView.current.when();
+
       mapView.current.on('error', (error) => console.error('MapView error:', error));
 
       await mapView.current.when();
@@ -102,6 +107,7 @@ const EsriMapComponent = () => {
       console.error('EsriLoader: ', error);
     }
   };
+
 
   useEffect(() => {
     initializeMap();
@@ -122,10 +128,11 @@ const EsriMapComponent = () => {
       ></div>
       <button
         onClick={showUserLocation}
+        className="map-button" // Apply the button class
         style={{
           position: 'absolute',
           bottom: '-10px',
-          right: '30px',
+          right: '25px',
           zIndex: '1001',
         }}
       >
