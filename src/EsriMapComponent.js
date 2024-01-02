@@ -9,6 +9,8 @@ import Search from '@arcgis/core/widgets/Search';
 import Legend from '@arcgis/core/widgets/Legend';
 import Config from '@arcgis/core/config';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
+import Directions from  '@arcgis/core/widgets/Directions';
+import RouteLayer from '@arcgis/core/layers/RouteLayer';
 import Button from '@mui/material/Button';
 import '@arcgis/core/assets/esri/themes/light/main.css'; // Import the ArcGIS CSS
 
@@ -70,8 +72,22 @@ const EsriMapComponent = () => {
       });
 
 
+      const routeLayer = new RouteLayer();
       const map = new WebMap({
         basemap: 'arcgis/navigation',
+        layers: [routeLayer]
+      });
+
+      mapView.current = new MapView({
+        container: mapViewNode.current,
+        center: [26.1025, 44.4268],
+        zoom: 10,
+        map: map,
+      });
+
+      const directionsWidget = new Directions({
+        layer: routeLayer,
+        view: mapView.current
       });
       
       const createFootballLayer = (visibility) => {
@@ -81,6 +97,7 @@ const EsriMapComponent = () => {
           url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/ArcGIS/rest/services/Baze_Sportive/FeatureServer',
           id: 'footballLayerId',
           visible: visibility,
+          title: 'Terenuri de fotbal',
           outFields: ['*'],
           popupTemplate: popupFootballFields,
           renderer: {
@@ -88,8 +105,8 @@ const EsriMapComponent = () => {
             symbol: {
               type: 'picture-marker',
               url: url_ball,
-              width: '15px',
-              height: '15px',
+              width: '18px',
+              height: '18px',
             },
           },
         });
@@ -104,6 +121,7 @@ const EsriMapComponent = () => {
           url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/arcgis/rest/services/Tenis_Layer/FeatureServer',
           id: 'tennisLayerId',
           visible: visibility,
+          title: 'Terenuri de tenis',
           outFields: ['*'],
           popupTemplate: popupFootballFields,
           renderer: {
@@ -111,8 +129,8 @@ const EsriMapComponent = () => {
             symbol: {
               type: 'picture-marker',
               url: url_ball,
-              width: '15px',
-              height: '15px',
+              width: '18px',
+              height: '18px',
             },
           },
         });
@@ -127,6 +145,7 @@ const EsriMapComponent = () => {
           url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/arcgis/rest/services/Basketball_Layer/FeatureServer',
           id: 'basketballLayerId',
           visible: visibility,
+          title: 'Terenuri de baschet',
           outFields: ['*'],
           popupTemplate: popupFootballFields,
           renderer: {
@@ -134,8 +153,8 @@ const EsriMapComponent = () => {
             symbol: {
               type: 'picture-marker',
               url: url_ball,
-              width: '15px',
-              height: '15px',
+              width: '18px',
+              height: '18px',
             },
           },
         });
@@ -143,13 +162,6 @@ const EsriMapComponent = () => {
 
       const basketballLayer = createBasketballLayer(true);
       map.add(basketballLayer);
-
-      mapView.current = new MapView({
-        container: mapViewNode.current,
-        center: [26.1025, 44.4268],
-        zoom: 10,
-        map: map,
-      });
 
       locateWidget.current = new Locate({
         view: mapView.current,
@@ -165,17 +177,13 @@ const EsriMapComponent = () => {
   
       mapView.current.ui.add(homeWidget, 'top-left');
 
-      const searchWidget = new Search({
-        view: mapView.current,
-      });
-  
-      mapView.current.ui.add(searchWidget, 'top-right');
+      
 
       const legendWidget = new Legend({
         view: mapView.current,
       });
       
-      mapView.current.ui.add(legendWidget, 'bottom-left');
+      mapView.current.ui.add(legendWidget, 'top-left');
 
       await mapView.current.when();
 
@@ -224,6 +232,53 @@ const EsriMapComponent = () => {
       // Call the drawPolygon function from within the initializeMap function
       drawPolygon();
 
+      const searchWidget = new Search({
+        view: mapView.current,
+        includeDefaultSources: false, // Exclude default search sources
+        sources: [
+          {
+            layer: footballLayer,
+            searchFields: ['name'], // Replace with the actual field used for football field names
+            displayField: 'name', // Replace with the actual field used for football field names
+            exactMatch: false,
+            outFields: ['*'],
+            name: 'Football Fields',
+            placeholder: 'Search Football Fields',
+          },
+          {
+            layer: tennisLayer,
+            searchFields: ['name'], // Replace with the actual field used for tennis field names
+            displayField: 'name', // Replace with the actual field used for tennis field names
+            exactMatch: false,
+            outFields: ['*'],
+            name: 'Tennis Fields',
+            placeholder: 'Search Tennis Fields',
+          },
+          {
+            layer: basketballLayer,
+            searchFields: ['name'], // Replace with the actual field used for basketball field names
+            displayField: 'name', // Replace with the actual field used for basketball field names
+            exactMatch: false,
+            outFields: ['*'],
+            name: 'Basketball Fields',
+            placeholder: 'Search Basketball Fields',
+          },
+        ],
+      });
+
+      const handleSearchResults = (event) => {
+        const results = event.results;
+        if (results.length > 0) {
+          // Handle the search results here
+          console.log('Search Results:', results);
+        }
+      };
+
+      searchWidget.on('search-complete', handleSearchResults);
+  
+      mapView.current.ui.add(searchWidget, 'top-right');
+      mapView.current.ui.add(directionsWidget, 'top-right');
+
     } catch (error) {
       console.error('EsriLoader: ', error);
     }
@@ -255,27 +310,27 @@ const EsriMapComponent = () => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', marginTop: '50px' }}>
-    <div
-      ref={mapViewNode}
-      className="map-container"
-      style={{ position: 'absolute', top: '50px', width: '100%', height: 'calc(100% - 50px)' }}
-    ></div>
-    <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
-      <Button variant="contained" onClick={toggleFootballLayerVisibility}>
-        {!footballLayerVisible ? 'Hide Football Layer' : 'Show Football Layer'}
-      </Button>
+      <div
+        ref={mapViewNode}
+        className="map-container"
+        style={{ position: 'absolute', top: '50px', width: '100%', height: 'calc(100% - 50px)' }}
+      ></div>
+      <div style={{ position: 'absolute', top: '-5px', left: '10px' }}>
+        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleFootballLayerVisibility}>
+          {!footballLayerVisible ? 'Hide Football Layer' : 'Show Football Layer'}
+        </Button>
+      </div>
+      <div style={{ position: 'absolute', top: '-5px', left: '270px' }}>
+        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleTennisLayerVisibility}>
+          {!tennisLayerVisible ? 'Hide Tennis Layer' : 'Show Tennis Layer'}
+        </Button>
+      </div>
+      <div style={{ position: 'absolute', top: '-5px', left: '510px' }}>
+        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleBasketballLayerVisibility}>
+          {!basketballLayerVisible ? 'Hide Basketball Layer' : 'Show Basketball Layer'}
+        </Button>
+      </div>
     </div>
-    <div style={{ position: 'absolute', top: '10px', left: '240px' }}>
-      <Button variant="contained" onClick={toggleTennisLayerVisibility}>
-        {!tennisLayerVisible ? 'Hide Tennis Layer' : 'Show Tennis Layer'}
-      </Button>
-    </div>
-    <div style={{ position: 'absolute', top: '10px', left: '440px' }}>
-      <Button variant="contained" onClick={toggleBasketballLayerVisibility}>
-        {!basketballLayerVisible ? 'Hide Basketball Layer' : 'Show Basketball Layer'}
-      </Button>
-    </div>
-  </div>
   );
 };
 
