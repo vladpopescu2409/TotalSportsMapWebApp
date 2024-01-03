@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import { auth, logout } from "./firebase";
 import Button from '@mui/material/Button';
-import EsriMapComponent from "./EsriMapComponent"; // Make sure to provide the correct path
+import EsriMapComponent from "./EsriMapComponent";
 
 function Dashboard() {
   const [user, loading] = useAuthState(auth);
@@ -17,15 +17,18 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
+      <EsriMapComponent />
 
-      <div style={{ position: 'absolute', top: '10px', right: '10px'}}>
-        <Button variant="contained" style={{ fontSize: '16px', padding: '15px', backgroundColor: 'black', color: 'white' }} onClick={logout}>
+      <div className="dashboard__btn-container">
+        <Button
+          className="dashboard__btn"
+          variant="contained"
+          style={{backgroundColor: 'black', color: 'white' }}
+          onClick={logout}
+        >
           Logout
         </Button>
       </div>
-      
-      {/* Render the EsriMapComponent here */}
-      <EsriMapComponent />
     </div>
   );
 }

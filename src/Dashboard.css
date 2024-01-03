@@ -1,26 +1,21 @@
 .dashboard {
-    height: 100vh;
-    width: 100vw;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .dashboard__container {
-    display: flex;
-    flex-direction: column;
-    text-align: center;
-    background-color: #dcdcdc;
-    padding: 30px;
-  }
-  .dashboard__btn {
-    font-size: 18px;
-    position: absolute;
-    top: 10px; /* Adjust the top position as needed */
-    right: 10px; /* Adjust the right position as needed */
-    border: none;
-    color: white;
-    background-color: black;
-  }
-  .dashboard div {
-    margin-top: 7px;
-  }
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+.dashboard__btn-container {
+  position: absolute;
+  top: 0px; /* Adjust the top position as needed */
+  right: 50px; /* Adjust the right position as needed */
+}
+
+.dashboard__btn {
+  font-size: 18px;
+  color: white;
+  background-color: black;
+}
+
+.dashboard__btn:hover {
+  background-color: black;
+}

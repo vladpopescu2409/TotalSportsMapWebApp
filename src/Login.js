@@ -20,6 +20,7 @@ function Login() {
   
   return (
     <div className="login">
+      <h1>Total Sports Map</h1>
       <div className="login__container">
         <input
           type="text"
