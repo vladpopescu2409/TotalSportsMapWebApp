@@ -17,8 +17,10 @@ function Register() {
 
   const register = () => {
     if (!name) alert("Please enter name");
-    if (password !== repeatPassword) alert("Passwords don't match. Please enter matching passwords.");
-    registerWithEmailAndPassword(name, email, password);
+    if (password !== repeatPassword) 
+      alert("Passwords don't match. Please enter matching passwords.");
+    else
+      registerWithEmailAndPassword(name, email, password);
   };
 
   useEffect(() => {
