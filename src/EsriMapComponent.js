@@ -378,52 +378,54 @@ const EsriMapComponent = () => {
 
       const basketballLayer = await createBasketballLayer(false);
       map.add(basketballLayer);
+      
+      if (!searchWidgetRef.current) {
+        const searchWidget = new Search({
+          view: mapView.current,
+          includeDefaultSources: false,
+          sources: [
+            {
+              layer: footballLayer,
+              searchFields: ['name'],
+              displayField: 'name', 
+              exactMatch: false,
+              outFields: ['*'],
+              name: 'Football Fields',
+              placeholder: 'Search Football Fields',
+            },
+            {
+              layer: tennisLayer,
+              searchFields: ['name'], // Replace with the actual field used for tennis field names
+              displayField: 'name', // Replace with the actual field used for tennis field names
+              exactMatch: false,
+              outFields: ['*'],
+              name: 'Tennis Fields',
+              placeholder: 'Search Tennis Fields',
+            },
+            {
+              layer: basketballLayer,
+              searchFields: ['name'], // Replace with the actual field used for basketball field names
+              displayField: 'name', // Replace with the actual field used for basketball field names
+              exactMatch: false,
+              outFields: ['*'],
+              name: 'Basketball Fields',
+              placeholder: 'Search Basketball Fields',
+            },
+          ],
+        });
 
-      const searchWidget = new Search({
-        view: mapView.current,
-        includeDefaultSources: false,
-        sources: [
-          {
-            layer: footballLayer,
-            searchFields: ['name'],
-            displayField: 'name', 
-            exactMatch: false,
-            outFields: ['*'],
-            name: 'Football Fields',
-            placeholder: 'Search Football Fields',
-          },
-          {
-            layer: tennisLayer,
-            searchFields: ['name'], // Replace with the actual field used for tennis field names
-            displayField: 'name', // Replace with the actual field used for tennis field names
-            exactMatch: false,
-            outFields: ['*'],
-            name: 'Tennis Fields',
-            placeholder: 'Search Tennis Fields',
-          },
-          {
-            layer: basketballLayer,
-            searchFields: ['name'], // Replace with the actual field used for basketball field names
-            displayField: 'name', // Replace with the actual field used for basketball field names
-            exactMatch: false,
-            outFields: ['*'],
-            name: 'Basketball Fields',
-            placeholder: 'Search Basketball Fields',
-          },
-        ],
-      });
+        const handleSearchResults = (event) => {
+          const results = event.results;
+          if (results.length > 0) {
+            // Handle the search results here
+            console.log('Search Results:', results);
+          }
+        };
 
-      const handleSearchResults = (event) => {
-        const results = event.results;
-        if (results.length > 0) {
-          // Handle the search results here
-          console.log('Search Results:', results);
-        }
-      };
-
-      searchWidget.on('search-complete', handleSearchResults);
-      mapView.current.ui.add(searchWidget, 'top-right');
-      searchWidgetRef.current = searchWidget;
+        searchWidget.on('search-complete', handleSearchResults);
+        mapView.current.ui.add(searchWidget, 'top-right');
+        searchWidgetRef.current = searchWidget;
+      }
       
     } catch (error) {
       console.error('EsriLoader: ', error);
@@ -459,7 +461,7 @@ const EsriMapComponent = () => {
         document.body.removeChild(existingScript);
       }
       if (mapView.current && searchWidgetRef.current) {
-        mapView.current.ui.remove(searchWidgetRef.current); // Remove the search widget
+        mapView.current.ui.remove(searchWidgetRef); // Remove the search widget
         searchWidgetRef.current = null; // Reset the ref
       }
     };
