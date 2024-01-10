@@ -452,6 +452,21 @@ const EsriMapComponent = () => {
     // Append the script to the document body
     document.body.appendChild(script);
 
+    // Clean up the script when the component is unmounted
+    return () => {
+      const existingScript = document.getElementById('openweathermap-widget-script');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
+      if (mapView.current && searchWidgetRef.current) {
+        mapView.current.ui.remove(searchWidgetRef.current); // Remove the search widget
+        searchWidgetRef.current = null; // Reset the ref
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Update layer visibility when footballLayerVisible changes
     if (mapView.current && mapView.current.map) {
       const footballLayer = mapView.current.map.findLayerById('footballLayerId');
       const tennisLayer = mapView.current.map.findLayerById('tennisLayerId');
@@ -466,18 +481,6 @@ const EsriMapComponent = () => {
         basketballLayer.visible = !basketballLayerVisible;
       }
     }
-
-    // Clean up the script when the component is unmounted
-    return () => {
-      const existingScript = document.getElementById('openweathermap-widget-script');
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-      if (mapView.current && searchWidgetRef.current) {
-        mapView.current.ui.remove(searchWidgetRef.current); // Remove the search widget
-        searchWidgetRef.current = null; // Reset the ref
-      }
-    };
   }, [footballLayerVisible, tennisLayerVisible, basketballLayerVisible]);
 
 
