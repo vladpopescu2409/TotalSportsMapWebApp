@@ -5,6 +5,7 @@ import "./Dashboard.css";
 import { auth, logout } from "./firebase";
 import Button from '@mui/material/Button';
 import EsriMapComponent from "./EsriMapComponent";
+import Map from "./Map"
 
 function Dashboard() {
   const [user, loading] = useAuthState(auth);
@@ -17,7 +18,8 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <EsriMapComponent />
+      {/* <EsriMapComponent /> */}
+      <Map />
 
       <div className="dashboard__btn-container">
         <Button

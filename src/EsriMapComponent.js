@@ -12,7 +12,7 @@ import PopupTemplate from '@arcgis/core/PopupTemplate';
 import Directions from  '@arcgis/core/widgets/Directions';
 import RouteLayer from '@arcgis/core/layers/RouteLayer';
 import { solve } from '@arcgis/core/rest/route';
-import { addFootballFieldsToFirebase, addBasketballFieldsToFirebase, addTennisFieldsToFirebase } from './firebase';
+import { addFootballFieldsToFirebase, addBasketballFieldsToFirebase, addTennisFieldsToFirebase, removeFieldFromFavorites, addFieldToFavorites, auth } from './firebase';
 import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
 import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -26,6 +26,7 @@ const EsriMapComponent = () => {
   const mapLoaded = useRef(false);
   const mapView = useRef(null);
   const searchWidgetRef = useRef(null);
+  const [favoriteFields, setFavoriteFields] = useState(new Set());
   const [footballLayerVisible, setFootballLayerVisible] = useState(true);
   const [tennisLayerVisible, setTennisLayerVisible] = useState(true);
   const [basketballLayerVisible, setBasketballLayerVisible] = useState(true);
@@ -63,15 +64,6 @@ const EsriMapComponent = () => {
               { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
             ],
           },
-          {
-            type: 'attachments',
-            content: (attachments) => {
-              if (attachments && attachments.length > 0) {
-                return `<img src="${attachments[0].url}" alt="Attachment"/>`;
-              }
-              return 'No image available';
-            },
-          },
         ],
       });
 
@@ -90,15 +82,6 @@ const EsriMapComponent = () => {
               { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
             ],
           },
-          {
-            type: 'attachments',
-            content: (attachments) => {
-              if (attachments && attachments.length > 0) {
-                return `<img src="${attachments[0].url}" alt="Attachment"/>`;
-              }
-              return 'No image available';
-            },
-          },
         ],
       });
 
@@ -116,21 +99,13 @@ const EsriMapComponent = () => {
               { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
               { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
             ],
-          },
-          {
-            type: 'attachments',
-            content: (attachments) => {
-              if (attachments && attachments.length > 0) {
-                return `<img src="${attachments[0].url}" alt="Attachment"/>`;
-              }
-              return 'No image available';
-            },
-          },
+          }
         ],
       });
 
       const popupNeighbourhoods = new PopupTemplate({
         title: '{Denumire}',
+
       });
 
       const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
@@ -459,10 +434,6 @@ const EsriMapComponent = () => {
       const existingScript = document.getElementById('openweathermap-widget-script');
       if (existingScript) {
         document.body.removeChild(existingScript);
-      }
-      if (mapView.current && searchWidgetRef.current) {
-        mapView.current.ui.remove(searchWidgetRef); // Remove the search widget
-        searchWidgetRef.current = null; // Reset the ref
       }
     };
   }, []);

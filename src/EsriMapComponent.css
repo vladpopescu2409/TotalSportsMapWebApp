@@ -44,3 +44,24 @@
   .map-button:hover {
     background-color: #005fa3;
   }
+
+  #star-button-container {
+    text-align: center; /* Center the button in the popup */
+    padding: 5px; /* Add some padding around the button */
+  }
+  
+  /* Styles for the favorite button placeholder */
+  .favorite-button-placeholder {
+    background-color: #007bff; /* Blue background for the placeholder */
+    color: white; /* White text */
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 0.9em; /* Slightly smaller font size */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+  }
+  
+  .favorite-button-placeholder:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+  }
