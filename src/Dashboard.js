@@ -18,8 +18,8 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      {/* <EsriMapComponent /> */}
-      <Map />
+      <EsriMapComponent />
+      {/* <Map /> */}
 
       <div className="dashboard__btn-container">
         <Button

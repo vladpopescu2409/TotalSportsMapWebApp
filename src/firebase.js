@@ -206,6 +206,5 @@ export {
   addTennisFieldsToFirebase,
   addToFavorites,
   removeFromFavorites,
-  getCurrentUserId,
-  database
+  getCurrentUserId
 };

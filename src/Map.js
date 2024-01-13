@@ -18,6 +18,75 @@ const Map = () => {
   const mapView = useRef(null);
   const [footballLayerVisible, setFootballLayerVisible] = useState(true);
   const [layerList, setLayerList] = useState(null);
+  const [searchedPrice, setSearchedPrice] = useState(""); // State to store the entered price
+  const [searchedLayer, setSearchedLayer] = useState(null); 
+  const [map, setMap] = useState(null); // State to store the map instance
+  const [footballLayer, setFootballLayer] = useState(null); // State to store the football layer instance
+  const handleSearch = async (price) => {
+    if (!isNaN(price)) {
+      // Filter features based on the entered price
+      const filteredFeatures = footballLayer.source.items.filter(
+        (feature) => feature.attributes.Price <= price
+      );
+      console.log(filteredFeatures)
+
+      // Create a new FeatureLayer with the filtered features
+      const filteredFootballLayer = new FeatureLayer({
+        source: filteredFeatures,
+        objectIdField: "ObjectID",
+        renderer: {
+          type: "simple",
+          symbol: {
+            // Define symbol properties for the filtered layer
+            type: "picture-marker",
+            url: url_ball,
+            width: "20px",
+            height: "20px",
+          },
+        },
+        popupTemplate: popupFootballFields, // Use the same popup template
+        title: `Terenuri de fotbal (Price <= ${price})`, // Display the price in the layer title
+      });
+
+      // Add the filtered layer to the map
+      map.add(filteredFootballLayer);
+
+      // Store the filtered layer in state
+      setSearchedLayer(filteredFootballLayer);
+    }
+  };
+  const url_ball = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTQiIGhlaWdodD0iMTk0IiB2ZXJzaW9uPSIxLjEiPgoJPGNpcmNsZSBmaWxsPSIjMDAwMDAwIiBjeD0iOTciIGN5PSI5NyIgcj0iOTciIC8+Cgk8cGF0aCBmaWxsPSIjZmZmZmZmIiBkPSJtIDk0LDkuMiBhIDg4LDg4IDAgMCAwIC01NSwyMS44IGwgMjcsMCAyOCwtMTQuNCAwLC03LjQgeiBtIDYsMCAwLDcuNCAyOCwxNC40IDI3LDAgYSA4OCw4OCAwIDAgMCAtNTUsLTIxLjggeiBtIC02Ny4yLDI3LjggYSA4OCw4OCAwIDAgMCAtMjAsMzQuMiBsIDE2LDI3LjYgMjMsLTMuNiAyMSwtMzYuMiAtOC40LC0yMiAtMzEuNiwwIHogbSA5Ni44LDAgLTguNCwyMiAyMSwzNi4yIDIzLDMuNiAxNS44LC0yNy40IGEgODgsODggMCAwIDAgLTE5LjgsLTM0LjQgbCAtMzEuNiwwIHogbSAtNTAsMjYgLTIwLjIsMzUuMiAxNy44LDMwLjggMzkuNiwwIDE3LjgsLTMwLjggLTIwLjIsLTM1LjIgLTM0LjgsMCB6IG0gLTY4LjgsMTYuNiBhIDg4LDg4IDAgMCAwIC0xLjgsMTcuNCA4OCw4OCAwIDAgMCAxMC40LDQxLjQgbCA3LjQsLTQuNCAtMS40LC0yOSAtMTQuNiwtMjUuNCB6IG0gMTcyLjQsMC4yIC0xNC42LDI1LjIgLTEuNCwyOSA3LjQsNC40IGEgODgsODggMCAwIDAgMTAuNCwtNDEuNCA4OCw4OCAwIDAgMCAtMS44LC0xNy4yIHogbSAtMTA2LDU3LjIgLTE1LjQsMTkgTCA3Ny4yLDE4Mi42IGEgODgsODggMCAwIDAgMTkuOCwyLjQgODgsODggMCAwIDAgMTkuOCwtMi40IGwgMTUuNCwtMjYuNiAtMTUuNCwtMTkgLTM5LjYsMCB6IG0gLTQ3LjgsMi42IC03LDQgQSA4OCw4OCAwIDAgMCA2OC44LDE4MC40IGwgLTE0LC0yNC42IC0yNS40LC0xNi4yIHogbSAxMzUuMiwwIC0yNS40LDE2LjIgLTE0LDI0LjQgYSA4OCw4OCAwIDAgMCA0Ni40LC0zNi42IGwgLTcsLTQgeiIvPgo8L3N2Zz4K';
+
+  const addFieldToFavoritesAction = {
+    title: "Add To Favourites",
+    id: "add-this",
+    className: "esri-icon-favorites",
+  };
+
+  const removeFieldFromFavoritesAction = {
+    title: "Remove From Favourites",
+    id: "remove-this",
+    className: "esri-icon-close-circled"
+  };
+
+  const popupFootballFields = new PopupTemplate({
+    title: '{name}',
+    content: [
+      {
+        type: 'fields',
+        fieldInfos: [
+          { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
+          { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
+          { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
+          { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
+          { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
+          { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
+          { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
+        ],
+      },
+    ],
+    actions: [addFieldToFavoritesAction, removeFieldFromFavoritesAction]
+  });
 
   const toggleFootballLayerVisibility = () => {
     setFootballLayerVisible(!footballLayerVisible);
@@ -28,36 +97,7 @@ const Map = () => {
 
     Config.apiKey = 'AAPK3d737cc3995b41de949427b52d04f894Ujr4K1pyTeeqmvTK161wvqE6yVRI_bv7MLOWyOrKzXhG9DaHWeR4T-cXQfIGgmEW';
 
-    const addFieldToFavoritesAction = {
-      title: "Add To Favourites",
-      id: "add-this",
-      className: "esri-icon-favorites",
-    };
-
-    const removeFieldFromFavoritesAction = {
-      title: "Remove From Favourites",
-      id: "remove-this",
-      className: "esri-icon-close-circled"
-    };
-
-    const popupFootballFields = new PopupTemplate({
-      title: '{name}',
-      content: [
-        {
-          type: 'fields',
-          fieldInfos: [
-            { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
-            { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
-            { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
-            { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
-            { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
-            { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
-            { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
-          ],
-        },
-      ],
-      actions: [addFieldToFavoritesAction, removeFieldFromFavoritesAction]
-    });
+    
     
     const map = new WebMap({
       basemap: 'arcgis/navigation',
@@ -69,27 +109,32 @@ const Map = () => {
       zoom: 11,
       map: map,
     });
-
-    const url_ball = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTQiIGhlaWdodD0iMTk0IiB2ZXJzaW9uPSIxLjEiPgoJPGNpcmNsZSBmaWxsPSIjMDAwMDAwIiBjeD0iOTciIGN5PSI5NyIgcj0iOTciIC8+Cgk8cGF0aCBmaWxsPSIjZmZmZmZmIiBkPSJtIDk0LDkuMiBhIDg4LDg4IDAgMCAwIC01NSwyMS44IGwgMjcsMCAyOCwtMTQuNCAwLC03LjQgeiBtIDYsMCAwLDcuNCAyOCwxNC40IDI3LDAgYSA4OCw4OCAwIDAgMCAtNTUsLTIxLjggeiBtIC02Ny4yLDI3LjggYSA4OCw4OCAwIDAgMCAtMjAsMzQuMiBsIDE2LDI3LjYgMjMsLTMuNiAyMSwtMzYuMiAtOC40LC0yMiAtMzEuNiwwIHogbSA5Ni44LDAgLTguNCwyMiAyMSwzNi4yIDIzLDMuNiAxNS44LC0yNy40IGEgODgsODggMCAwIDAgLTE5LjgsLTM0LjQgbCAtMzEuNiwwIHogbSAtNTAsMjYgLTIwLjIsMzUuMiAxNy44LDMwLjggMzkuNiwwIDE3LjgsLTMwLjggLTIwLjIsLTM1LjIgLTM0LjgsMCB6IG0gLTY4LjgsMTYuNiBhIDg4LDg4IDAgMCAwIC0xLjgsMTcuNCA4OCw4OCAwIDAgMCAxMC40LDQxLjQgbCA3LjQsLTQuNCAtMS40LC0yOSAtMTQuNiwtMjUuNCB6IG0gMTcyLjQsMC4yIC0xNC42LDI1LjIgLTEuNCwyOSA3LjQsNC40IGEgODgsODggMCAwIDAgMTAuNCwtNDEuNCA4OCw4OCAwIDAgMCAtMS44LC0xNy4yIHogbSAtMTA2LDU3LjIgLTE1LjQsMTkgTCA3Ny4yLDE4Mi42IGEgODgsODggMCAwIDAgMTkuOCwyLjQgODgsODggMCAwIDAgMTkuOCwtMi40IGwgMTUuNCwtMjYuNiAtMTUuNCwtMTkgLTM5LjYsMCB6IG0gLTQ3LjgsMi42IC03LDQgQSA4OCw4OCAwIDAgMCA2OC44LDE4MC40IGwgLTE0LC0yNC42IC0yNS40LC0xNi4yIHogbSAxMzUuMiwwIC0yNS40LDE2LjIgLTE0LDI0LjQgYSA4OCw4OCAwIDAgMCA0Ni40LC0zNi42IGwgLTcsLTQgeiIvPgo8L3N2Zz4K';
-
-    const footballLayer = new FeatureLayer({
-          url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/ArcGIS/rest/services/Baze_Sportive/FeatureServer',
-          id: 'footballLayerId',
-          title: 'Terenuri de fotbal',
-          outFields: ['*'],
-          popupTemplate: popupFootballFields,
-          renderer: {
-            type: 'simple',
-            symbol: {
-              type: 'picture-marker',
-              url: url_ball,
-              width: '20px',
-              height: '20px',
-            },
+    
+    const createFootballLayer = async(visibility) => {
+      //const featureLayerData = await getFootballFeatureLayerData();
+      //const formattedData = formatDataForFirebase(featureLayerData);
+      //addFootballFieldsToFirebase(formattedData);
+      return new FeatureLayer({
+        url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/ArcGIS/rest/services/Baze_Sportive/FeatureServer',
+        id: 'footballLayerId',
+        visible: visibility,
+        title: 'Terenuri de fotbal',
+        outFields: ['*'],
+        popupTemplate: popupFootballFields,
+        renderer: {
+          type: 'simple',
+          symbol: {
+            type: 'picture-marker',
+            url: url_ball,
+            width: '20px',
+            height: '20px',
           },
-        });
-      
-      map.add(footballLayer);
+        },
+      });
+    }
+
+    const footballLayer = await createFootballLayer(false);
+    map.add(footballLayer);
 
 
       await mapView.current.when();
@@ -134,7 +179,7 @@ const Map = () => {
           height: '20px',
         },
       },
-    });;
+    });
     
 
     onValue(footballFieldsFavouriteRef, (snapshot) => {
@@ -170,16 +215,41 @@ const Map = () => {
   setLayerList(layerListWidget);
  
   if (layerList) {
-    layerList.operationalItems.addMany(footballLayer,favouriteFootbalFieldsLayer);
+    layerList.operationalItems.add(favouriteFootbalFieldsLayer);
   }
+  
   };
+
+ 
 
   useEffect(() => {
     initializeMap();
   }, []);
 
+  useEffect(() => {
+    // Update layer visibility when footballLayerVisible changes
+    if (mapView.current && mapView.current.map) {
+      const footballLayer = mapView.current.map.findLayerById('footballLayerId');
+      if (footballLayer) {
+        footballLayer.visible = !footballLayerVisible;
+      }
+    }
+  }, [footballLayerVisible]);
+
+
   return (
+    
     <div style={{ position: 'relative', width: '100%', height: '100%', marginTop: '50px' }}>
+      {/* Search bar */}
+      <div>
+        <input
+          type="number"
+          placeholder="Enter price per hour"
+          value={searchedPrice}
+          onChange={(e) => setSearchedPrice(e.target.value)}
+        />
+        <button onClick={() => handleSearch(searchedPrice)}>Search Fields</button>
+        </div>
       <div
         ref={mapViewNode}
         className="map-container"
@@ -197,6 +267,9 @@ const Map = () => {
           gap: '100px',
         }}
       >
+        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleFootballLayerVisibility}>
+          {!footballLayerVisible ? 'Hide Football Layer' : 'Show Football Layer'}
+        </Button>
       </div>
     </div>
   );
