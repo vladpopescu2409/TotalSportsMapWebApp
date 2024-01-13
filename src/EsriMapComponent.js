@@ -79,6 +79,16 @@ const EsriMapComponent = () => {
               { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
             ],
           },
+          {
+            type: "media",
+            mediaInfos: [{
+              type: "image", // Autocasts as new ImageMediaInfo()
+              // Autocasts as new ImageMediaInfoValue()
+              value: {
+                sourceURL: "{url}"
+              }
+            }]
+          }
         ],
         actions: [addFootballFieldToFavoritesAction, removeFootballFieldFromFavoritesAction]
       });
@@ -110,6 +120,15 @@ const EsriMapComponent = () => {
               { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
             ],
           },
+          {
+            type: "media",
+            mediaInfos: [{
+              type: "image", // Autocasts as new ImageMediaInfo()
+              value: {
+                sourceURL: "{url}"
+              }
+            }]
+          }
         ],
         actions: [addTennisFieldToFavoritesAction, removeTennisFieldFromFavoritesAction]
       });
@@ -141,6 +160,15 @@ const EsriMapComponent = () => {
               { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
             ],
           },
+          {
+            type: "media",
+            mediaInfos: [{
+              type: "image", // Autocasts as new ImageMediaInfo()
+              value: {
+                sourceURL: "{url}"
+              }
+            }]
+          }
         ],
         actions: [addBasketballFieldToFavoritesAction, removeBasketballFieldFromFavoritesAction]
       });
