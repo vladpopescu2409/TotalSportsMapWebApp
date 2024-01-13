@@ -119,35 +119,7 @@ const getCurrentUserId = () => {
   return user ? user.uid : null;
 };
 
-// const addFieldToFavorites = async (userId, fieldId) => {
-//   const fieldListRef = ref(database, `users/${userId}/footballFieldsFavouriteList`);
-//   try {
-//     // Fetch the current list of favorites
-//     const snapshot = await get(fieldListRef);
-//     let favorites = snapshot.exists() ? snapshot.val() : [];
-
-//     // Add the new fieldId if it's not already in the list
-//     if (!favorites.includes(fieldId)) {
-//       favorites.push(fieldId);
-//       await set(fieldListRef, favorites);
-//     }
-//   } catch (error) {
-//     console.error("Error updating favorites in Firebase:", error);
-//   }
-// };
-
-// const handleAddFieldToFavorites = async (event) => {
-//   // Assume you have a way to get the current user's ID
-//   const userId = getCurrentUserId(); // Replace with actual method to get user ID
-
-//   // Extract the field ID from the clicked feature
-//   const fieldId = event.graphic.attributes.id;
-
-//   // Call the addFieldToFavorites function
-//   await addFieldToFavorites(userId, fieldId);
-// };
-
-const addToFavorites = async (fieldId) => {
+const addToFavorites = async (fieldId, favoriteListName) => {
   const user = auth.currentUser;
   if (!user) {
     console.error("User not logged in");
@@ -155,21 +127,68 @@ const addToFavorites = async (fieldId) => {
   }
 
   const userRef = ref(database, 'users/' + user.uid);
-  get(userRef).then((snapshot) => {
-    if (snapshot.exists()) {
-      let userData = snapshot.val();
-      let favorites = userData.footballFieldsFavouriteList || [];
-      if (!favorites.includes(fieldId)) {
-        favorites.push(fieldId);
-        update(userRef, { footballFieldsFavouriteList: favorites });
-        console.log("Field added!")
+  get(userRef)
+    .then((snapshot) => {
+      if (snapshot.exists()) {
+        let userData = snapshot.val();
+        let favorites = userData[favoriteListName] || [];
+
+        // Check if the fieldId is in the favorites array
+        if (!favorites.includes(fieldId)) {
+          favorites.push(fieldId);
+          // Create an object with the specific fieldListName and update the user's data
+          const updateData = { [favoriteListName]: favorites };
+          update(userRef, updateData);
+          alert("Field added to favorites!");
+          console.log("Field added to favorites!");
+        } else {
+          console.log("Field is already in favorites.");
+          alert("Field is already in favorites.");
+        }
+      } else {
+        console.error("User not found in database");
       }
-    } else {
-      console.error("User not found in database");
-    }
-  }).catch((error) => {
-    console.error("Error reading user data from Realtime Database:", error);
-  });
+    })
+    .catch((error) => {
+      console.error("Error reading user data from Realtime Database:", error);
+    });
+};
+
+const removeFromFavorites = async (fieldId, favoriteListName) => {
+  const user = auth.currentUser;
+  if (!user) {
+    console.error("User not logged in");
+    return;
+  }
+
+  const userRef = ref(database, 'users/' + user.uid);
+  get(userRef)
+    .then((snapshot) => {
+      if (snapshot.exists()) {
+        let userData = snapshot.val();
+        let favorites = userData[favoriteListName] || [];
+
+        // Check if the fieldId is in the favorites array
+        const index = favorites.indexOf(fieldId);
+        if (index !== -1) {
+          // Remove the fieldId from the favorites array
+          favorites.splice(index, 1);
+          // Create an object with the specific fieldListName and update the user's data
+          const updateData = { [favoriteListName]: favorites };
+          update(userRef, updateData);
+          alert("Field removed from favorites!");
+          console.log("Field removed from favorites!");
+        } else {
+          alert("Field is not in favorites.");
+          console.log("Field is not in favorites.");
+        }
+      } else {
+        console.error("User not found in database");
+      }
+    })
+    .catch((error) => {
+      console.error("Error reading user data from Realtime Database:", error);
+    });
 };
 
 export {
@@ -185,6 +204,8 @@ export {
   addFootballFieldsToFirebase,
   addBasketballFieldsToFirebase,
   addTennisFieldsToFirebase,
+  addToFavorites,
+  removeFromFavorites,
   getCurrentUserId,
-  addToFavorites
+  database
 };

@@ -12,7 +12,8 @@ import PopupTemplate from '@arcgis/core/PopupTemplate';
 import Directions from  '@arcgis/core/widgets/Directions';
 import RouteLayer from '@arcgis/core/layers/RouteLayer';
 import { solve } from '@arcgis/core/rest/route';
-import { addFootballFieldsToFirebase, addBasketballFieldsToFirebase, addTennisFieldsToFirebase, removeFieldFromFavorites, addFieldToFavorites, auth } from './firebase';
+import * as reactiveUtils from "@arcgis/core/core/reactiveUtils.js";
+import { auth, addToFavorites, removeFromFavorites} from './firebase';
 import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
 import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -49,6 +50,18 @@ const EsriMapComponent = () => {
 
       Config.apiKey = 'AAPK3d737cc3995b41de949427b52d04f894Ujr4K1pyTeeqmvTK161wvqE6yVRI_bv7MLOWyOrKzXhG9DaHWeR4T-cXQfIGgmEW';
 
+      const addFootballFieldToFavoritesAction = {
+        title: "Add To Favourites",
+        id: "add-this-football",
+        className: "esri-icon-favorites",
+      };
+  
+      const removeFootballFieldFromFavoritesAction = {
+        title: "Remove From Favourites",
+        id: "remove-this-football",
+        className: "esri-icon-close-circled"
+      };
+
       const popupFootballFields = new PopupTemplate({
         title: '{name}',
         content: [
@@ -65,7 +78,51 @@ const EsriMapComponent = () => {
             ],
           },
         ],
+        actions: [addFootballFieldToFavoritesAction, removeFootballFieldFromFavoritesAction]
       });
+
+      const addTennisFieldToFavoritesAction = {
+        title: "Add To Favourites",
+        id: "add-this-football",
+        className: "esri-icon-favorites",
+      };
+  
+      const removeTennisFieldFromFavoritesAction = {
+        title: "Remove From Favourites",
+        id: "remove-this-tennis",
+        className: "esri-icon-close-circled"
+      };
+
+      const popupTennisFields = new PopupTemplate({
+        title: '{name}',
+        content: [
+          {
+            type: 'fields',
+            fieldInfos: [
+              { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
+              { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
+              { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
+              { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
+              { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
+              { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
+              { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
+            ],
+          },
+        ],
+        actions: [addTennisFieldToFavoritesAction, removeTennisFieldFromFavoritesAction]
+      });
+
+      const addBasketballFieldToFavoritesAction = {
+        title: "Add To Favourites",
+        id: "add-this-football",
+        className: "esri-icon-favorites",
+      };
+  
+      const removeBasketballFieldFromFavoritesAction = {
+        title: "Remove From Favourites",
+        id: "remove-this-basketball",
+        className: "esri-icon-close-circled"
+      };
 
       const popupBasketballFields = new PopupTemplate({
         title: '{name}',
@@ -83,24 +140,7 @@ const EsriMapComponent = () => {
             ],
           },
         ],
-      });
-
-      const popupTennisFields = new PopupTemplate({
-        title: '{name}',
-        content: [
-          {
-            type: 'fields',
-            fieldInfos: [
-              { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
-              { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
-              { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
-              { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
-              { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
-              { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
-              { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
-            ],
-          }
-        ],
+        actions: [addBasketballFieldToFavoritesAction, removeBasketballFieldFromFavoritesAction]
       });
 
       const popupNeighbourhoods = new PopupTemplate({
@@ -400,6 +440,51 @@ const EsriMapComponent = () => {
         searchWidget.on('search-complete', handleSearchResults);
         mapView.current.ui.add(searchWidget, 'top-right');
         searchWidgetRef.current = searchWidget;
+        await mapView.current.when();
+
+      reactiveUtils.on(
+        () => mapView.current.popup,
+        "trigger-action",
+        async (event) => {
+          // Execute the measureThis() function if the measure-this action is clicked
+          if (event.action.id === "add-this-football") {
+            if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+              const fieldId = mapView.current.popup.selectedFeature.attributes.id;
+              await addToFavorites(fieldId,"footballFieldsFavouriteList");
+            }
+          }
+          if (event.action.id === "remove-this-football") {
+            if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+              const fieldId = mapView.current.popup.selectedFeature.attributes.id;
+              await removeFromFavorites(fieldId, "footballFieldsFavouriteList");
+            }
+          }
+          if (event.action.id === "add-this-tennis") {
+            if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+              const fieldId = mapView.current.popup.selectedFeature.attributes.id;
+              await addToFavorites(fieldId,"tennisFieldsFavouriteList");
+            }
+          }
+          if (event.action.id === "remove-this-tennis") {
+            if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+              const fieldId = mapView.current.popup.selectedFeature.attributes.id;
+              await removeFromFavorites(fieldId, "tennisFieldsFavouriteList");
+            }
+          }
+          if (event.action.id === "add-this-basketball") {
+            if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+              const fieldId = mapView.current.popup.selectedFeature.attributes.id;
+              await addToFavorites(fieldId,"basketballFieldsFavouriteList");
+            }
+          }
+          if (event.action.id === "remove-this-basketball") {
+            if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+              const fieldId = mapView.current.popup.selectedFeature.attributes.id;
+              await removeFromFavorites(fieldId, "basketballFieldsFavouriteList");
+            }
+          }
+        }
+      );
       }
       
     } catch (error) {
