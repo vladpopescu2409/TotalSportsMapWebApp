@@ -22,7 +22,7 @@ function Dashboard() {
       {/* <Map /> */}
 
       <div className="dashboard__btn-container">
-        <Button
+        <Button class="logoutButton"
           className="dashboard__btn"
           variant="contained"
           style={{backgroundColor: 'black', color: 'white' }}

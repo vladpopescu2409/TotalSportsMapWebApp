@@ -9,12 +9,12 @@ import Search from '@arcgis/core/widgets/Search';
 import Legend from '@arcgis/core/widgets/Legend';
 import Config from '@arcgis/core/config';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
-import Directions from  '@arcgis/core/widgets/Directions';
+import Directions from '@arcgis/core/widgets/Directions';
 import LayerList from '@arcgis/core/widgets/LayerList';
 import RouteLayer from '@arcgis/core/layers/RouteLayer';
 import { solve } from '@arcgis/core/rest/route';
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils.js";
-import { auth, addToFavorites, removeFromFavorites, getCurrentUserId} from './firebase';
+import { auth, addToFavorites, removeFromFavorites, getCurrentUserId } from './firebase';
 import { getDatabase, ref, set, get, update, onValue } from 'firebase/database';
 import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
 import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
@@ -45,7 +45,7 @@ const EsriMapComponent = () => {
   const toggleBasketballLayerVisibility = () => {
     setBasketballLayerVisible(!basketballLayerVisible);
   };
-  
+
   const initializeMap = async () => {
     try {
       if (mapLoaded.current) return;
@@ -57,12 +57,54 @@ const EsriMapComponent = () => {
         id: "add-this-football",
         className: "esri-icon-favorites",
       };
-  
+
       const removeFootballFieldFromFavoritesAction = {
         title: "Remove From Favourites",
         id: "remove-this-football",
         className: "esri-icon-close-circled"
       };
+
+      const openReviewForm = {
+        title: "Open Form",
+        id: "open-form",
+        className: "esri-icon-edit", // You can use an Esri icon or provide your own CSS class
+          // Handle the click event of the custom action button
+          execute: function() {
+            // Open your form here
+            openForm();
+          }
+      }
+
+      function openForm() {
+        // Create a modal or custom form
+        var formContainer = document.createElement("div");
+        formContainer.innerHTML = `
+          <form id="reviewForm">
+            <label for="grade">Select Grade (1-5):</label>
+            <input type="number" id="grade" name="grade" min="1" max="5" required>
+      
+            <label for="review">Leave a Review:</label>
+            <textarea id="review" name="review" rows="4" required></textarea>
+      
+            <br>
+            <button type="submit">Submit</button>
+          </form>
+        `;
+      
+        // Display the form in a modal or as a custom widget
+        // Here, we'll use the window.confirm dialog for simplicity
+        var isFormSubmitted = window.confirm("Please provide your feedback:", formContainer);
+        
+        if (isFormSubmitted) {
+          // Handle the form submission (you may want to send the data to a server, etc.)
+          var grade = document.getElementById("grade").value;
+          var review = document.getElementById("review").value;
+      
+          // Do something with the grade and review data (e.g., send it to a server)
+          console.log("Grade:", grade);
+          console.log("Review:", review);
+        }
+      }
 
       const popupFootballFields = new PopupTemplate({
         title: '{name}',
@@ -90,7 +132,7 @@ const EsriMapComponent = () => {
             }]
           }
         ],
-        actions: [addFootballFieldToFavoritesAction, removeFootballFieldFromFavoritesAction]
+        actions: [addFootballFieldToFavoritesAction, removeFootballFieldFromFavoritesAction, openReviewForm]
       });
 
       const addTennisFieldToFavoritesAction = {
@@ -98,7 +140,7 @@ const EsriMapComponent = () => {
         id: "add-this-tennis",
         className: "esri-icon-favorites",
       };
-  
+
       const removeTennisFieldFromFavoritesAction = {
         title: "Remove From Favourites",
         id: "remove-this-tennis",
@@ -138,7 +180,7 @@ const EsriMapComponent = () => {
         id: "add-this-basketball",
         className: "esri-icon-favorites",
       };
-  
+
       const removeBasketballFieldFromFavoritesAction = {
         title: "Remove From Favourites",
         id: "remove-this-basketball",
@@ -203,7 +245,7 @@ const EsriMapComponent = () => {
         view: mapView.current,
       });
 
-      
+
       const homeWidget = new Home({
         view: mapView.current,
       });
@@ -222,7 +264,7 @@ const EsriMapComponent = () => {
       mapView.current.ui.add(homeWidget, 'top-left');
       mapView.current.ui.add(legendWidget, 'top-left');
       mapView.current.ui.add(directionsWidget, 'bottom-right');
-      
+
       const stopSymbol = {
         type: "simple-marker",
         style: "cross",
@@ -267,19 +309,19 @@ const EsriMapComponent = () => {
 
       map.add(routeLayerWidget);
 
-     
+
 
       const getFootballFeatureLayerData = async () => {
         try {
-    
+
           const featureLayer = new FeatureLayer({
             url: "https://services6.arcgis.com/3T4q3twraXHKJdR1/ArcGIS/rest/services/Baze_Sportive/FeatureServer"
           });
-    
+
           const query = featureLayer.createQuery();
           query.outFields = ["*"];
-          query.returnGeometry = false;  
-    
+          query.returnGeometry = false;
+
           const response = await featureLayer.queryFeatures(query);
           console.log(response.features);
           return response.features;
@@ -288,7 +330,7 @@ const EsriMapComponent = () => {
           throw error;
         }
       };
-      
+
       const formatDataForFirebase = (data) => {
         return data.map((feature) => {
           return {
@@ -305,7 +347,7 @@ const EsriMapComponent = () => {
 
       const url_football = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTQiIGhlaWdodD0iMTk0IiB2ZXJzaW9uPSIxLjEiPgoJPGNpcmNsZSBmaWxsPSIjMDAwMDAwIiBjeD0iOTciIGN5PSI5NyIgcj0iOTciIC8+Cgk8cGF0aCBmaWxsPSIjZmZmZmZmIiBkPSJtIDk0LDkuMiBhIDg4LDg4IDAgMCAwIC01NSwyMS44IGwgMjcsMCAyOCwtMTQuNCAwLC03LjQgeiBtIDYsMCAwLDcuNCAyOCwxNC40IDI3LDAgYSA4OCw4OCAwIDAgMCAtNTUsLTIxLjggeiBtIC02Ny4yLDI3LjggYSA4OCw4OCAwIDAgMCAtMjAsMzQuMiBsIDE2LDI3LjYgMjMsLTMuNiAyMSwtMzYuMiAtOC40LC0yMiAtMzEuNiwwIHogbSA5Ni44LDAgLTguNCwyMiAyMSwzNi4yIDIzLDMuNiAxNS44LC0yNy40IGEgODgsODggMCAwIDAgLTE5LjgsLTM0LjQgbCAtMzEuNiwwIHogbSAtNTAsMjYgLTIwLjIsMzUuMiAxNy44LDMwLjggMzkuNiwwIDE3LjgsLTMwLjggLTIwLjIsLTM1LjIgLTM0LjgsMCB6IG0gLTY4LjgsMTYuNiBhIDg4LDg4IDAgMCAwIC0xLjgsMTcuNCA4OCw4OCAwIDAgMCAxMC40LDQxLjQgbCA3LjQsLTQuNCAtMS40LC0yOSAtMTQuNiwtMjUuNCB6IG0gMTcyLjQsMC4yIC0xNC42LDI1LjIgLTEuNCwyOSA3LjQsNC40IGEgODgsODggMCAwIDAgMTAuNCwtNDEuNCA4OCw4OCAwIDAgMCAtMS44LC0xNy4yIHogbSAtMTA2LDU3LjIgLTE1LjQsMTkgTCA3Ny4yLDE4Mi42IGEgODgsODggMCAwIDAgMTkuOCwyLjQgODgsODggMCAwIDAgMTkuOCwtMi40IGwgMTUuNCwtMjYuNiAtMTUuNCwtMTkgLTM5LjYsMCB6IG0gLTQ3LjgsMi42IC03LDQgQSA4OCw4OCAwIDAgMCA2OC44LDE4MC40IGwgLTE0LC0yNC42IC0yNS40LC0xNi4yIHogbSAxMzUuMiwwIC0yNS40LDE2LjIgLTE0LDI0LjQgYSA4OCw4OCAwIDAgMCA0Ni40LC0zNi42IGwgLTcsLTQgeiIvPgo8L3N2Zz4K';
 
-      const createFootballLayer = async(visibility) => {
+      const createFootballLayer = async (visibility) => {
         //const featureLayerData = await getFootballFeatureLayerData();
         //const formattedData = formatDataForFirebase(featureLayerData);
         //addFootballFieldsToFirebase(formattedData);
@@ -333,15 +375,15 @@ const EsriMapComponent = () => {
 
       const getTennisFeatureLayerData = async () => {
         try {
-    
+
           const featureLayer = new FeatureLayer({
             url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/arcgis/rest/services/Tenis_Layer/FeatureServer'
           });
-    
+
           const query = featureLayer.createQuery();
           query.outFields = ["*"];
-          query.returnGeometry = false;  
-    
+          query.returnGeometry = false;
+
           const response = await featureLayer.queryFeatures(query);
           console.log(response.features);
           return response.features;
@@ -381,15 +423,15 @@ const EsriMapComponent = () => {
 
       const getBasketballFeatureLayerData = async () => {
         try {
-    
+
           const featureLayer = new FeatureLayer({
             url: 'https://services6.arcgis.com/3T4q3twraXHKJdR1/arcgis/rest/services/Basketball_Layer/FeatureServer'
           });
-    
+
           const query = featureLayer.createQuery();
           query.outFields = ["*"];
-          query.returnGeometry = false;  
-    
+          query.returnGeometry = false;
+
           const response = await featureLayer.queryFeatures(query);
           console.log(response.features);
           return response.features;
@@ -401,7 +443,7 @@ const EsriMapComponent = () => {
 
       const url_basketball = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxzdmcgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGlkPSJzdmcyNDk1IiB2aWV3Qm94PSIwIDAgMzcwIDM3MCIgdmVyc2lvbj0iMS4wIj4KICA8ZGVmcyBpZD0iZGVmczI0OTciPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDI2NDEiIHgxPSIyNjYuMDEiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB5MT0iMzY1LjgiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjM0Ni4zMSIgeTI9IjM1Ny45OCI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzI3NiIgc3RvcC1jb2xvcj0iI2Y1NzkzNiIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzI3OCIgc3RvcC1jb2xvcj0iI2Y1NzkzNiIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY0MyIgeDE9IjI3NC40OSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSIzNDIuNSIgZ3JhZGllbnRUcmFuc2Zvcm09InRyYW5zbGF0ZSgtMTEyLjUyIC0yNzEpIiB4Mj0iMjgyLjMiIHkyPSIzMDUuMDMiPgogICAgICA8c3RvcCBpZD0ic3RvcDMyODYiIHN0b3AtY29sb3I9IiNmMzgxM2IiIG9mZnNldD0iMCIvPgogICAgICA8c3RvcCBpZD0ic3RvcDMyODgiIHN0b3AtY29sb3I9IiNmMzgxM2IiIHN0b3Atb3BhY2l0eT0iMCIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDI2NDUiIHgxPSIyNDUuNzEiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB5MT0iMzc3LjY5IiBncmFkaWVudFRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMTIuNTIgLTI3MSkiIHgyPSIyNTAuMzYiIHkyPSIzMjEuODQiPgogICAgICA8c3RvcCBpZD0ic3RvcDMyOTYiIHN0b3AtY29sb3I9IiNmOWE0NjUiIG9mZnNldD0iMCIvPgogICAgICA8c3RvcCBpZD0ic3RvcDMyOTgiIHN0b3AtY29sb3I9IiNmOWE0NjUiIHN0b3Atb3BhY2l0eT0iMCIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDI2NDciIHgxPSIyMjUuOTkiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB5MT0iNDAwLjA3IiBncmFkaWVudFRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMTIuNTIgLTI3MSkiIHgyPSIxNjUuNjYiIHkyPSIzODMuMjIiPgogICAgICA8c3RvcCBpZD0ic3RvcDMzMDYiIHN0b3AtY29sb3I9IiNmYWE2NjgiIG9mZnNldD0iMCIvPgogICAgICA8c3RvcCBpZD0ic3RvcDMzMDgiIHN0b3AtY29sb3I9IiNmYWE2NjgiIHN0b3Atb3BhY2l0eT0iMCIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDI2NDkiIHgxPSIxOTkuMyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSI0MjAuMDIiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjE2MS4zNiIgeTI9IjQ0Ny4xMSI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzMxNiIgc3RvcC1jb2xvcj0iI2YxN2UzOSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzMxOCIgc3RvcC1jb2xvcj0iI2YxN2UzOSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY1MSIgeDE9IjIxOC4xNCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSI0MjkuNjkiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjIxMy4zNSIgeTI9IjQ4MS4zMiI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzMyNiIgc3RvcC1jb2xvcj0iI2Y2N2EzNCIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzMyOCIgc3RvcC1jb2xvcj0iI2Y2N2EzNCIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY1MyIgeDE9IjIzNS4zMiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSI0MDcuMDQiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjI3Ny40NyIgeTI9IjQ1MC45OCI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzMzNiIgc3RvcC1jb2xvcj0iI2ZjOWY1OSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzMzOCIgc3RvcC1jb2xvcj0iI2ZjOWY1OSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY1NSIgeDE9IjI2NC44MiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSIzNzUuNzkiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjMxNC4yNyIgeTI9IjQwNy42OSI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM0NiIgc3RvcC1jb2xvcj0iI2ZjOWY1OSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM0OCIgc3RvcC1jb2xvcj0iI2ZjOWY1OSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY1NyIgeDE9IjQ2NS43MSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSI1MjcuMjUiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjMxOC4xIiB5Mj0iNDA4LjA5Ij4KICAgICAgPHN0b3AgaWQ9InN0b3AzMzU2IiBzdG9wLWNvbG9yPSIjOWY0MTBkIiBvZmZzZXQ9IjAiLz4KICAgICAgPHN0b3AgaWQ9InN0b3AzMzU4IiBzdG9wLWNvbG9yPSIjOWY0MTBkIiBzdG9wLW9wYWNpdHk9IjAiIG9mZnNldD0iMSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibGluZWFyR3JhZGllbnQyNjU5IiB4MT0iNDQyLjQ4IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeTE9IjM2MC41IiBncmFkaWVudFRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMTIuNTIgLTI3MSkiIHgyPSIzMzQuMDYiIHkyPSIzNTguOCI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM2NiIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM2OCIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY2MSIgeDE9IjMyNS4zNCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSIyNzcuMTkiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjMwMi45MiIgeTI9IjMwOS44NSI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM3NiIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM3OCIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY2MyIgeDE9IjIwMi4wNyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSIyODUuNjUiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjIyMS4yNSIgeTI9IjMxNC41OSI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM4NiIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM4OCIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY2NSIgeDE9IjEyOC41NyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSIzNjUuMzQiIGdyYWRpZW50VHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTExMi41MiAtMjcxKSIgeDI9IjE2Ny41OSIgeTI9IjM4My4yMiI+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM5NiIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIGlkPSJzdG9wMzM5OCIgc3RvcC1jb2xvcj0iI2ExNDIwZSIgc3RvcC1vcGFjaXR5PSIwIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjY2NyIgeDE9IjM2Mi4zMSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHkxPSI2MDguOCIgZ3JhZGllbnRUcmFuc2Zvcm09InRyYW5zbGF0ZSgtMTEyLjUyIC0yNzEpIiB4Mj0iMjY1LjExIiB5Mj0iNDQ2LjIzIj4KICAgICAgPHN0b3AgaWQ9InN0b3AzNDA2IiBzdG9wLWNvbG9yPSIjYTE0MjBkIiBvZmZzZXQ9IjAiLz4KICAgICAgPHN0b3AgaWQ9InN0b3AzNDA4IiBzdG9wLWNvbG9yPSIjYTE0MjBkIiBzdG9wLW9wYWNpdHk9IjAiIG9mZnNldD0iMSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibGluZWFyR3JhZGllbnQyNjY5IiB4MT0iMjI0LjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB5MT0iNjE1LjI5IiBncmFkaWVudFRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMTIuNTIgLTI3MSkiIHgyPSIyMTYuOTYiIHkyPSI0ODguNDciPgogICAgICA8c3RvcCBpZD0ic3RvcDM0MTYiIHN0b3AtY29sb3I9IiNhMTQyMGQiIG9mZnNldD0iMCIvPgogICAgICA8c3RvcCBpZD0ic3RvcDM0MTgiIHN0b3AtY29sb3I9IiNhMTQyMGQiIHN0b3Atb3BhY2l0eT0iMCIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDI2NzEiIHgxPSIxMTguNjYiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB5MT0iNDg5LjI0IiBncmFkaWVudFRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMTIuNTIgLTI3MSkiIHgyPSIxNjEuMzYiIHkyPSI0NTAuOTMiPgogICAgICA8c3RvcCBpZD0ic3RvcDM0MjYiIHN0b3AtY29sb3I9IiNhMzQzMGUiIG9mZnNldD0iMCIvPgogICAgICA8c3RvcCBpZD0ic3RvcDM0MjgiIHN0b3AtY29sb3I9IiNhMzQzMGUiIHN0b3Atb3BhY2l0eT0iMCIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8ZyBpZD0ibGF5ZXIxIj4KICAgIDxnIGlkPSJnMjYxNCIgdHJhbnNmb3JtPSJtYXRyaXgoLTEgMCAwIDEgMzY5LjE3IDApIj4KICAgICAgPHBhdGggaWQ9InBhdGgyNDc0IiB0cmFuc2Zvcm09Im1hdHJpeCgxLjA0NTkgMCAwIDEuMDQ1OSAtMTQxLjE1IC0zMDUuNzUpIiBkPSJtNDgyLjA4IDQ2OC44N2ExNzAuNjIgMTcwLjYyIDAgMSAxIC0zNDEuMjUgMCAxNzAuNjIgMTcwLjYyIDAgMSAxIDM0MS4yNSAweiIvPgogICAgICA8cGF0aCBpZD0icGF0aDI0NTgiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0iI2Q2NWExZSIgZD0ibTEyOS40MSAxMTkuMzFsLTIzLjQ2IDI4LjljNTcuMTkgNDEuOSAzMi44NiAxODcuNjMgOTYuMjggMjE0IDQ0Ljg3LTQuNDEgODQuODktMjUuNDcgMTEzLjc4LTU2LjktNTcuODMtNjkuNDctMTE3LjY0LTEzNS42LTE4Ni42LTE4NnoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgyNDYwIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9IiNkNjVhMWUiIGQ9Im0xNjMuMTMgODYuODA4bC0yNS4yOCAyNS4yODJjODMuNzYgNzEuMDEgMTM2Ljc2IDEzMC40OSAxODIuMzUgMTg3LjE5bDAuNzUgMC40M2MyNi4yNi0zMS4wNyA0Mi4wOS03MS4yNCA0Mi4wOS0xMTUuMDkgMC0zLjU1LTAuMTEtNy4wNy0wLjMxLTEwLjU2LTMxLjcyLTY0LTE1MC44Ny00My4wMi0xOTkuNi04Ny4yNTJ6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMjQ2MiIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSIjZDY1YTFlIiBkPSJtMjY4LjY2IDM3Ljc0NWMtMzkuODEgMC4zOTgtOTAuMzkgMjYuMDEyLTk1LjMxIDQwLjY1NiAxLjYyIDM2Ljc1OSAxNzAuNiAyNS45ODkgMTg4LjM4IDg2LjY1OWwwLjI1IDAuMDNjLTUuNTktNTEuMi0zMi44NC05NS45MS03Mi40MS0xMjQuNzUtNi40Ni0xLjg3OC0xMy41NS0yLjY2OC0yMC45MS0yLjU5NXoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgyNDY0IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9IiNkNjVhMWUiIGQ9Im0xODQuNiA2LjE4MjZjLTguOTUgMC0xNy43NyAwLjY2MjQtMjYuMzcgMS45Mzc1LTI2LjU1IDI4LjczNS0xMi4zOCA1NC41NDkgMS44NyA2Mi40MzggMTIuMTcgOC42NjMgNDMuNTUtNDUuNTgxIDEyMi4yMi0zNS4yMTktMjguMDgtMTguNDI2LTYxLjY1LTI5LjE1Ni05Ny43Mi0yOS4xNTZ6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMjQ2NiIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSIjZDY1YTFlIiBkPSJtMTAzLjI2IDE1OC42OGMtMS42MyAwLjAzLTMuMzMzIDAuMzYtNS4xMjcgMC45Ny0yMy4yNTcgMTguMjUtNjUuODAxIDEwNi4wNy00MC45MzcgMTQ5Ljg1IDAuMDA1IDAtMC4wMDUgMC4wMiAwIDAuMDMgMzIuMzkyIDMzLjAzIDc3LjUyNCA1My41MyAxMjcuNCA1My41MyAxLjM3IDAgMi43MyAwIDQuMS0wLjAzLTUzLjc0LTM4Ljg0LTQyLjA0LTE5My42OC04NS40NC0yMDQuMzV6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMjQ2OCIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSIjZDY1YTFlIiBkPSJtNjAuMzIxIDEzNi4xNWMtMTkuNTM2IDAuNjItNDIuMzM1IDEwLjg2LTUzLjA2MyAzMy4xM2wtMC41NjIyIDEuMzRjLTAuMzU5NCA0LjYyLTAuNTYyNSA5LjI5LTAuNTYyNSAxNCAwIDQ0LjE1IDE2LjA2OCA4NC41NSA0Mi42NTcgMTE1LjcyLTI0LjYwOS03Ny4yNSA1MC4yNjYtMTQ1LjE3IDQyLjEyNS0xNTIuNzItNS4zODItNy44LTE3LjIyNy0xMS44OS0zMC41OTQtMTEuNDd6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMjQ3MCIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSIjZDY1YTFlIiBkPSJtNTQuNjY1IDYyLjM3Yy0yNS4yMTMgMjYuNzg0LTQyLjI4IDYxLjM0LTQ3LjEyNSA5OS42OSAxOC45NjctMzEuNzIgNDcuMjYxLTQzLjI0IDkzLTE5LjI1bDIzLjQ3LTI5LjVjLTE1LjMzLTEzLjgyOS00Ny42NDItMzcuNzAyLTY5LjM0NS01MC45NHoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgyNDcyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9IiNkNjVhMWUiIGQ9Im0xNTAuNTEgOS40MzI2Yy0zNC45NiA2Ljc2ODQtNjYuMjg1IDIzLjc1Ny05MC43NTIgNDcuNzE4bDAuNDM4IDAuNzgyYzI1LjczNyAxMS43MTkgNDcuNzU0IDMwLjkyOSA3MC40MzQgNDguNzQ3bDI3LjA3LTI1LjI3OWMtMTcuNjQtMTcuNzg0LTMxLjI0LTM3LjIwMi03LjE5LTcxLjk2OHoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzMjcyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjQxKSIgZD0ibTI2OC42NiAzNy43NDVjLTM5LjgxIDAuMzk4LTkwLjM5IDI2LjAxMi05NS4zMSA0MC42NTYgMS42MiAzNi43NTkgMTcwLjYgMjUuOTg5IDE4OC4zOCA4Ni42NTlsMC4yNSAwLjAzYy01LjU5LTUxLjItMzIuODQtOTUuOTEtNzIuNDEtMTI0Ljc1LTYuNDYtMS44NzgtMTMuNTUtMi42NjgtMjAuOTEtMi41OTV6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMzI4MiIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSJ1cmwoI2xpbmVhckdyYWRpZW50MjY0MykiIGQ9Im0xODQuNiA2LjE4MjZjLTguOTUgMC0xNy43NyAwLjY2MjQtMjYuMzcgMS45Mzc1LTI2LjU1IDI4LjczNS0xMi4zOCA1NC41NDkgMS44NyA2Mi40MzggMTIuMTcgOC42NjMgNDMuNTUtNDUuNTgxIDEyMi4yMi0zNS4yMTktMjguMDgtMTguNDI2LTYxLjY1LTI5LjE1Ni05Ny43Mi0yOS4xNTZ6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMzI5MiIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSJ1cmwoI2xpbmVhckdyYWRpZW50MjY0NSkiIGQ9Im0xNTAuNTEgOS40MzI2Yy0zNC45NiA2Ljc2ODQtNjYuMjg1IDIzLjc1Ny05MC43NTIgNDcuNzE4bDAuNDM4IDAuNzgyYzI1LjczNyAxMS43MTkgNDcuNzU0IDMwLjkyOSA3MC40MzQgNDguNzQ3bDI3LjA3LTI1LjI3OWMtMTcuNjQtMTcuNzg0LTMxLjI0LTM3LjIwMi03LjE5LTcxLjk2OHoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzMzAyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjQ3KSIgZD0ibTU0LjY2NSA2Mi4zN2MtMjUuMjEzIDI2Ljc4NC00Mi4yOCA2MS4zNC00Ny4xMjUgOTkuNjkgMTguOTY3LTMxLjcyIDQ3LjI2MS00My4yNCA5My0xOS4yNWwyMy40Ny0yOS41Yy0xNS4zMy0xMy44MjktNDcuNjQyLTM3LjcwMi02OS4zNDUtNTAuOTR6Ii8+CiAgICAgIDxwYXRoIGlkPSJwYXRoMzMxMiIgZmlsbC1ydWxlPSJldmVub2RkIiBmaWxsPSJ1cmwoI2xpbmVhckdyYWRpZW50MjY0OSkiIGQ9Im02MC4zMjEgMTM2LjE1Yy0xOS41MzYgMC42Mi00Mi4zMzUgMTAuODYtNTMuMDYzIDMzLjEzbC0wLjU2MjIgMS4zNGMtMC4zNTk0IDQuNjItMC41NjI1IDkuMjktMC41NjI1IDE0IDAgNDQuMTUgMTYuMDY4IDg0LjU1IDQyLjY1NyAxMTUuNzItMjQuNjA5LTc3LjI1IDUwLjI2Ni0xNDUuMTcgNDIuMTI1LTE1Mi43Mi01LjM4Mi03LjgtMTcuMjI3LTExLjg5LTMwLjU5NC0xMS40N3oiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzMzIyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjUxKSIgZD0ibTEwMy4yNiAxNTguNjhjLTEuNjMgMC4wMy0zLjMzMyAwLjM2LTUuMTI3IDAuOTctMjMuMjU3IDE4LjI1LTY1LjgwMSAxMDYuMDctNDAuOTM3IDE0OS44NSAwLjAwNSAwLTAuMDA1IDAuMDIgMCAwLjAzIDMyLjM5MiAzMy4wMyA3Ny41MjQgNTMuNTMgMTI3LjQgNTMuNTMgMS4zNyAwIDIuNzMgMCA0LjEtMC4wMy01My43NC0zOC44NC00Mi4wNC0xOTMuNjgtODUuNDQtMjA0LjM1eiIvPgogICAgICA8cGF0aCBpZD0icGF0aDMzMzIiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDI2NTMpIiBkPSJtMTI5LjQxIDExOS4zMWwtMjMuNDYgMjguOWM1Ny4xOSA0MS45IDMyLjg2IDE4Ny42MyA5Ni4yOCAyMTQgNDQuODctNC40MSA4NC44OS0yNS40NyAxMTMuNzgtNTYuOS01Ny44My02OS40Ny0xMTcuNjQtMTM1LjYtMTg2LjYtMTg2eiIvPgogICAgICA8cGF0aCBpZD0icGF0aDMzNDIiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDI2NTUpIiBkPSJtMTYzLjEzIDg2LjgwOGwtMjUuMjggMjUuMjgyYzgzLjc2IDcxLjAxIDEzNi43NiAxMzAuNDkgMTgyLjM1IDE4Ny4xOWwwLjc1IDAuNDNjMjYuMjYtMzEuMDcgNDIuMDktNzEuMjQgNDIuMDktMTE1LjA5IDAtMy41NS0wLjExLTcuMDctMC4zMS0xMC41Ni0zMS43Mi02NC0xNTAuODctNDMuMDItMTk5LjYtODcuMjUyeiIvPgogICAgICA8cGF0aCBpZD0icGF0aDMzNTIiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDI2NTcpIiBkPSJtMTYzLjEzIDg2LjgwOGwtMjUuMjggMjUuMjgyYzgzLjc2IDcxLjAxIDEzNi43NiAxMzAuNDkgMTgyLjM1IDE4Ny4xOWwwLjc1IDAuNDNjMjYuMjYtMzEuMDcgNDIuMDktNzEuMjQgNDIuMDktMTE1LjA5IDAtMy41NS0wLjExLTcuMDctMC4zMS0xMC41Ni0zMS43Mi02NC0xNTAuODctNDMuMDItMTk5LjYtODcuMjUyeiIvPgogICAgICA8cGF0aCBpZD0icGF0aDMzNjIiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDI2NTkpIiBkPSJtMjY4LjY2IDM3Ljc0NWMtMzkuODEgMC4zOTgtOTAuMzkgMjYuMDEyLTk1LjMxIDQwLjY1NiAxLjYyIDM2Ljc1OSAxNzAuNiAyNS45ODkgMTg4LjM4IDg2LjY1OWwwLjI1IDAuMDNjLTUuNTktNTEuMi0zMi44NC05NS45MS03Mi40MS0xMjQuNzUtNi40Ni0xLjg3OC0xMy41NS0yLjY2OC0yMC45MS0yLjU5NXoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzMzcyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjYxKSIgZD0ibTE4NC42IDYuMTgyNmMtOC45NSAwLTE3Ljc3IDAuNjYyNC0yNi4zNyAxLjkzNzUtMjYuNTUgMjguNzM1LTEyLjM4IDU0LjU0OSAxLjg3IDYyLjQzOCAxMi4xNyA4LjY2MyA0My41NS00NS41ODEgMTIyLjIyLTM1LjIxOS0yOC4wOC0xOC40MjYtNjEuNjUtMjkuMTU2LTk3LjcyLTI5LjE1NnoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzMzgyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjYzKSIgZD0ibTE1MC41MSA5LjQzMjZjLTM0Ljk2IDYuNzY4NC02Ni4yODUgMjMuNzU3LTkwLjc1MiA0Ny43MThsMC40MzggMC43ODJjMjUuNzM3IDExLjcxOSA0Ny43NTQgMzAuOTI5IDcwLjQzNCA0OC43NDdsMjcuMDctMjUuMjc5Yy0xNy42NC0xNy43ODQtMzEuMjQtMzcuMjAyLTcuMTktNzEuOTY4eiIvPgogICAgICA8cGF0aCBpZD0icGF0aDMzOTIiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDI2NjUpIiBkPSJtNTQuNjY1IDYyLjM3Yy0yNS4yMTMgMjYuNzg0LTQyLjI4IDYxLjM0LTQ3LjEyNSA5OS42OSAxOC45NjctMzEuNzIgNDcuMjYxLTQzLjI0IDkzLTE5LjI1bDIzLjQ3LTI5LjVjLTE1LjMzLTEzLjgyOS00Ny42NDItMzcuNzAyLTY5LjM0NS01MC45NHoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzNDAyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjY3KSIgZD0ibTEyOS40MSAxMTkuMzFsLTIzLjQ2IDI4LjljNTcuMTkgNDEuOSAzMi44NiAxODcuNjMgOTYuMjggMjE0IDQ0Ljg3LTQuNDEgODQuODktMjUuNDcgMTEzLjc4LTU2LjktNTcuODMtNjkuNDctMTE3LjY0LTEzNS42LTE4Ni42LTE4NnoiLz4KICAgICAgPHBhdGggaWQ9InBhdGgzNDEyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyNjY5KSIgZD0ibTEwMy4yNiAxNTguNjhjLTEuNjMgMC4wMy0zLjMzMyAwLjM2LTUuMTI3IDAuOTctMjMuMjU3IDE4LjI1LTY1LjgwMSAxMDYuMDctNDAuOTM3IDE0OS44NSAwLjAwNSAwLTAuMDA1IDAuMDIgMCAwLjAzIDMyLjM5MiAzMy4wMyA3Ny41MjQgNTMuNTMgMTI3LjQgNTMuNTMgMS4zNyAwIDIuNzMgMCA0LjEtMC4wMy01My43NC0zOC44NC00Mi4wNC0xOTMuNjgtODUuNDQtMjA0LjM1eiIvPgogICAgICA8cGF0aCBpZD0icGF0aDM0MjIiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDI2NzEpIiBkPSJtNjAuMzIxIDEzNi4xNWMtMTkuNTM2IDAuNjItNDIuMzM1IDEwLjg2LTUzLjA2MyAzMy4xM2wtMC41NjIyIDEuMzRjLTAuMzU5NCA0LjYyLTAuNTYyNSA5LjI5LTAuNTYyNSAxNCAwIDQ0LjE1IDE2LjA2OCA4NC41NSA0Mi42NTcgMTE1LjcyLTI0LjYwOS03Ny4yNSA1MC4yNjYtMTQ1LjE3IDQyLjEyNS0xNTIuNzItNS4zODItNy44LTE3LjIyNy0xMS44OS0zMC41OTQtMTEuNDd6Ii8+CiAgICA8L2c+CiAgPC9nPgogIDxtZXRhZGF0YT4KICAgIDxyZGY6UkRGPgogICAgICA8Y2M6V29yaz4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZSByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIi8+CiAgICAgICAgPGNjOmxpY2Vuc2UgcmRmOnJlc291cmNlPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9saWNlbnNlcy9wdWJsaWNkb21haW4vIi8+CiAgICAgICAgPGRjOnB1Ymxpc2hlcj4KICAgICAgICAgIDxjYzpBZ2VudCByZGY6YWJvdXQ9Imh0dHA6Ly9vcGVuY2xpcGFydC5vcmcvIj4KICAgICAgICAgICAgPGRjOnRpdGxlPk9wZW5jbGlwYXJ0PC9kYzp0aXRsZT4KICAgICAgICAgIDwvY2M6QWdlbnQ+CiAgICAgICAgPC9kYzpwdWJsaXNoZXI+CiAgICAgICAgPGRjOnRpdGxlPlBhbGxvbmUgYmFza2V0PC9kYzp0aXRsZT4KICAgICAgICA8ZGM6ZGF0ZT4yMDEwLTAzLTEzVDIwOjI1OjQ1PC9kYzpkYXRlPgogICAgICAgIDxkYzpkZXNjcmlwdGlvbj5CYWtldGJhbGw8L2RjOmRlc2NyaXB0aW9uPgogICAgICAgIDxkYzpzb3VyY2U+aHR0cDovL29wZW5jbGlwYXJ0Lm9yZy9kZXRhaWwvMzE0NTMvcGFsbG9uZS1iYXNrZXQtYnktcGVycGFvbGE8L2RjOnNvdXJjZT4KICAgICAgICA8ZGM6Y3JlYXRvcj4KICAgICAgICAgIDxjYzpBZ2VudD4KICAgICAgICAgICAgPGRjOnRpdGxlPnBlcnBhb2xhPC9kYzp0aXRsZT4KICAgICAgICAgIDwvY2M6QWdlbnQ+CiAgICAgICAgPC9kYzpjcmVhdG9yPgogICAgICAgIDxkYzpzdWJqZWN0PgogICAgICAgICAgPHJkZjpCYWc+CiAgICAgICAgICAgIDxyZGY6bGk+YmFza2V0YmFsbDwvcmRmOmxpPgogICAgICAgICAgICA8cmRmOmxpPmNsaXAgYXJ0PC9yZGY6bGk+CiAgICAgICAgICAgIDxyZGY6bGk+Y2xpcGFydDwvcmRmOmxpPgogICAgICAgICAgICA8cmRmOmxpPmltYWdlPC9yZGY6bGk+CiAgICAgICAgICAgIDxyZGY6bGk+bWVkaWE8L3JkZjpsaT4KICAgICAgICAgICAgPHJkZjpsaT5wdWJsaWMgZG9tYWluPC9yZGY6bGk+CiAgICAgICAgICAgIDxyZGY6bGk+c3BvcnQ8L3JkZjpsaT4KICAgICAgICAgICAgPHJkZjpsaT5zcG9ydHMyMDEwPC9yZGY6bGk+CiAgICAgICAgICAgIDxyZGY6bGk+c3ZnPC9yZGY6bGk+CiAgICAgICAgICA8L3JkZjpCYWc+CiAgICAgICAgPC9kYzpzdWJqZWN0PgogICAgICA8L2NjOldvcms+CiAgICAgIDxjYzpMaWNlbnNlIHJkZjphYm91dD0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbGljZW5zZXMvcHVibGljZG9tYWluLyI+CiAgICAgICAgPGNjOnBlcm1pdHMgcmRmOnJlc291cmNlPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyNSZXByb2R1Y3Rpb24iLz4KICAgICAgICA8Y2M6cGVybWl0cyByZGY6cmVzb3VyY2U9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zI0Rpc3RyaWJ1dGlvbiIvPgogICAgICAgIDxjYzpwZXJtaXRzIHJkZjpyZXNvdXJjZT0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjRGVyaXZhdGl2ZVdvcmtzIi8+CiAgICAgIDwvY2M6TGljZW5zZT4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgo8L3N2Zz4K';
 
-      const createBasketballLayer = async(visibility) => {
+      const createBasketballLayer = async (visibility) => {
         //const featureLayerData = await getBasketballFeatureLayerData();
         //const formattedData = formatDataForFirebase(featureLayerData);
         //addBasketballFieldsToFirebase(formattedData);
@@ -426,7 +468,7 @@ const EsriMapComponent = () => {
 
       const basketballLayer = await createBasketballLayer(false);
       map.add(basketballLayer);
-      
+
       if (!searchWidgetRef.current) {
         const searchWidget = new Search({
           view: mapView.current,
@@ -435,7 +477,7 @@ const EsriMapComponent = () => {
             {
               layer: footballLayer,
               searchFields: ['name'],
-              displayField: 'name', 
+              displayField: 'name',
               exactMatch: false,
               outFields: ['*'],
               name: 'Football Fields',
@@ -476,7 +518,7 @@ const EsriMapComponent = () => {
       }
 
       await mapView.current.when();
-      
+
       if (!mapLoaded.current) {
         reactiveUtils.on(
           () => mapView.current.popup,
@@ -486,7 +528,7 @@ const EsriMapComponent = () => {
             if (event.action.id === "add-this-football") {
               if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
                 const fieldId = mapView.current.popup.selectedFeature.attributes.id;
-                await addToFavorites(fieldId,"footballFieldsFavouriteList");
+                await addToFavorites(fieldId, "footballFieldsFavouriteList");
               }
             }
             if (event.action.id === "remove-this-football") {
@@ -498,7 +540,7 @@ const EsriMapComponent = () => {
             if (event.action.id === "add-this-tennis") {
               if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
                 const fieldId = mapView.current.popup.selectedFeature.attributes.id;
-                await addToFavorites(fieldId,"tennisFieldsFavouriteList");
+                await addToFavorites(fieldId, "tennisFieldsFavouriteList");
               }
             }
             if (event.action.id === "remove-this-tennis") {
@@ -510,7 +552,7 @@ const EsriMapComponent = () => {
             if (event.action.id === "add-this-basketball") {
               if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
                 const fieldId = mapView.current.popup.selectedFeature.attributes.id;
-                await addToFavorites(fieldId,"basketballFieldsFavouriteList");
+                await addToFavorites(fieldId, "basketballFieldsFavouriteList");
               }
             }
             if (event.action.id === "remove-this-basketball") {
@@ -545,7 +587,7 @@ const EsriMapComponent = () => {
           },
         },
       });
-    
+
 
       onValue(footballFieldsFavouriteRef, (snapshot) => {
         const favoriteFieldIds = snapshot.val() || [];
@@ -557,7 +599,7 @@ const EsriMapComponent = () => {
         favouriteFootbalFieldsLayer.definitionExpression = query.where;
       });
 
-   
+
       map.add(favouriteFootbalFieldsLayer);
 
       const tennisFieldsFavouriteRef = ref(databaseRef, 'users/' + userId + '/tennisFieldsFavouriteList');
@@ -579,7 +621,7 @@ const EsriMapComponent = () => {
           },
         },
       });
-    
+
 
       onValue(tennisFieldsFavouriteRef, (snapshot) => {
         const favoriteFieldIds = snapshot.val() || [];
@@ -591,7 +633,7 @@ const EsriMapComponent = () => {
         favouriteTennisFieldsLayer.definitionExpression = query.where;
       });
 
-   
+
       map.add(favouriteTennisFieldsLayer);
 
       const basketballFieldsFavouriteRef = ref(databaseRef, 'users/' + userId + '/basketballFieldsFavouriteList');
@@ -613,7 +655,7 @@ const EsriMapComponent = () => {
           },
         },
       });
-    
+
 
       onValue(basketballFieldsFavouriteRef, (snapshot) => {
         const favoriteFieldIds = snapshot.val() || [];
@@ -625,15 +667,15 @@ const EsriMapComponent = () => {
         favouriteBasketballFieldsLayer.definitionExpression = query.where;
       });
 
-   
+
       map.add(favouriteBasketballFieldsLayer);
 
       // Create a LayerList widget
       mapView.current.map.layers.forEach(layer => {
         if (layer !== favouriteFootbalFieldsLayer && layer !== favouriteTennisFieldsLayer && layer !== favouriteBasketballFieldsLayer) {
-            layer.listMode = "hide";
-          }
-        
+          layer.listMode = "hide";
+        }
+
       });
 
       if (!layerListWidgetRef.current) {
@@ -646,7 +688,7 @@ const EsriMapComponent = () => {
       }
 
       mapLoaded.current = true;
-      
+
     } catch (error) {
       console.error('EsriLoader: ', error);
     }
@@ -730,13 +772,13 @@ const EsriMapComponent = () => {
           gap: '100px',
         }}
       >
-        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleFootballLayerVisibility}>
+        <Button class="layerButton" variant="contained"  onClick={toggleFootballLayerVisibility}>
           {!footballLayerVisible ? 'Hide Football Layer' : 'Show Football Layer'}
         </Button>
-        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleTennisLayerVisibility}>
+        <Button class="layerButton" variant="contained"  onClick={toggleTennisLayerVisibility}>
           {!tennisLayerVisible ? 'Hide Tennis Layer' : 'Show Tennis Layer'}
         </Button>
-        <Button variant="contained" style={{ fontSize: '16px', padding: '15px' }} onClick={toggleBasketballLayerVisibility}>
+        <Button class="layerButton" variant="contained"  onClick={toggleBasketballLayerVisibility}>
           {!basketballLayerVisible ? 'Hide Basketball Layer' : 'Show Basketball Layer'}
         </Button>
       </div>

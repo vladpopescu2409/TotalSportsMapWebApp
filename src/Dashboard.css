@@ -19,3 +19,35 @@
 .dashboard__btn:hover {
   background-color: black;
 }
+
+.logoutButton {
+  font-family: 'Arial', sans-serif; /* Change the font family if needed */
+  font-size: 16px;
+  padding: 12px 20px;
+  text-transform: uppercase;
+  background-color: black; /* Black background color */
+  color: #ffffff; /* White text color */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  margin: 10px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Box shadow for a subtle lift */
+  outline: none; /* Remove default focus outline */
+  height: 40px;
+  margin-top: -5px;
+}
+
+.logoutButton:hover {
+  background-color: #333; /* Darker shade of black on hover */
+  color: #ffffff; /* Maintain white text color on hover */
+  transform: translateY(-2px); /* Move the button up slightly on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Increased box shadow on hover for depth */
+}
+
+.logoutButton:active {
+  background-color: #000; /* Even darker shade of black on active/clicked state */
+  transform: translateY(1px); /* Move the button down slightly when clicked */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Reduce box shadow on active state */
+}
