@@ -14,12 +14,13 @@ import LayerList from '@arcgis/core/widgets/LayerList';
 import RouteLayer from '@arcgis/core/layers/RouteLayer';
 import { solve } from '@arcgis/core/rest/route';
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils.js";
-import { auth, addToFavorites, removeFromFavorites, getCurrentUserId } from './firebase';
-import { getDatabase, ref, set, get, update, onValue } from 'firebase/database';
+import { addToFavorites, removeFromFavorites, getCurrentUserId, fetchRatingsForField, fetchNameByUserId } from './firebase';
+import { getDatabase, ref, onValue } from 'firebase/database';
 import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
 import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Button from '@mui/material/Button';
+import { useNavigate } from 'react-router-dom';
 import '@arcgis/core/assets/esri/themes/light/main.css';
 
 import './EsriMapComponent.css';
@@ -33,6 +34,11 @@ const EsriMapComponent = () => {
   const [footballLayerVisible, setFootballLayerVisible] = useState(true);
   const [tennisLayerVisible, setTennisLayerVisible] = useState(true);
   const [basketballLayerVisible, setBasketballLayerVisible] = useState(true);
+  const navigate = useNavigate();
+
+  const openRatingForm = (fieldId, fieldType) => {
+    navigate(`/ratingform${fieldType}`, { state: { fieldId } });
+  };
 
   const toggleFootballLayerVisibility = () => {
     setFootballLayerVisible(!footballLayerVisible);
@@ -53,166 +59,183 @@ const EsriMapComponent = () => {
       Config.apiKey = 'AAPK3d737cc3995b41de949427b52d04f894Ujr4K1pyTeeqmvTK161wvqE6yVRI_bv7MLOWyOrKzXhG9DaHWeR4T-cXQfIGgmEW';
 
       const addFootballFieldToFavoritesAction = {
-        title: "Add To Favourites",
+        title: "Add Favourites",
         id: "add-this-football",
         className: "esri-icon-favorites",
       };
 
       const removeFootballFieldFromFavoritesAction = {
-        title: "Remove From Favourites",
+        title: "Remove Favourites",
         id: "remove-this-football",
         className: "esri-icon-close-circled"
       };
 
-      const openReviewForm = {
-        title: "Open Form",
-        id: "open-form",
-        className: "esri-icon-edit", // You can use an Esri icon or provide your own CSS class
-          // Handle the click event of the custom action button
-          execute: function() {
-            // Open your form here
-            openForm();
-          }
-      }
-
-      function openForm() {
-        // Create a modal or custom form
-        var formContainer = document.createElement("div");
-        formContainer.innerHTML = `
-          <form id="reviewForm">
-            <label for="grade">Select Grade (1-5):</label>
-            <input type="number" id="grade" name="grade" min="1" max="5" required>
-      
-            <label for="review">Leave a Review:</label>
-            <textarea id="review" name="review" rows="4" required></textarea>
-      
-            <br>
-            <button type="submit">Submit</button>
-          </form>
-        `;
-      
-        // Display the form in a modal or as a custom widget
-        // Here, we'll use the window.confirm dialog for simplicity
-        var isFormSubmitted = window.confirm("Please provide your feedback:", formContainer);
-        
-        if (isFormSubmitted) {
-          // Handle the form submission (you may want to send the data to a server, etc.)
-          var grade = document.getElementById("grade").value;
-          var review = document.getElementById("review").value;
-      
-          // Do something with the grade and review data (e.g., send it to a server)
-          console.log("Grade:", grade);
-          console.log("Review:", review);
-        }
-      }
+      const addFootRatingAction = {
+        title: "Rate",
+        id: "rate-foot-this",
+        className: "esri-icon-edit"
+      };
 
       const popupFootballFields = new PopupTemplate({
         title: '{name}',
-        content: [
-          {
-            type: 'fields',
-            fieldInfos: [
-              { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
-              { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
-              { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
-              { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
-              { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
-              { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
-              { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
-            ],
-          },
-          {
-            type: "media",
-            mediaInfos: [{
-              type: "image", // Autocasts as new ImageMediaInfo()
-              // Autocasts as new ImageMediaInfoValue()
-              value: {
-                sourceURL: "{url}"
-              }
-            }]
+        content: async function(feature) {
+          const ratingsData = await fetchRatingsForField(feature.graphic.attributes.id - 1, "football");
+      
+          let ratingsContent = "<b>Ratings:</b><br/>";
+          let sum = 0.0;
+          let nr = 0;
+          for (const userId in ratingsData) {
+            const userRating = ratingsData[userId];
+            const userName = await fetchNameByUserId(userId);
+            nr += 1;
+            sum += userRating.rating;
+            ratingsContent += userName === null ?
+              `User Anonymous: ${userRating.rating} stars - ${userRating.comment} <br/>` :
+              `User ${userName}: ${userRating.rating} stars - ${userRating.comment} <br/>`;
           }
-        ],
-        actions: [addFootballFieldToFavoritesAction, removeFootballFieldFromFavoritesAction, openReviewForm]
+      
+          let ratingsAverage = nr > 0 ? "<b>Average Rating:</b> " + (sum / nr).toFixed(1) : "<b>No Ratings Yet</b>";
+      
+          let fieldContent = `
+            <b>ID:</b> ${feature.graphic.attributes.id}<br/>
+            <b>Sport:</b> ${feature.graphic.attributes.description}<br/>
+            <b>Address:</b> ${feature.graphic.attributes.Address}<br/>
+            <b>Facilities:</b> ${feature.graphic.attributes.Facilities}<br/>
+            <b>Fields:</b> ${feature.graphic.attributes.No_fields}<br/>
+            <b>Phone Number:</b> ${feature.graphic.attributes.PhoneNumber}<br/>
+            <b>Price (per hour):</b> ${feature.graphic.attributes.Price}<br/>
+          `;
+      
+          // Image element in HTML
+          let imageHtml = `<img src="${feature.graphic.attributes.url}" alt="Field Image" style="width:100%;max-height:200px;">`; // Adjust the style as needed
+      
+          // Combine all contents
+          let combinedContent = fieldContent + ratingsContent + ratingsAverage + imageHtml;
+      
+          // Return the combined content
+          return combinedContent;
+        },
+        actions: [addFootballFieldToFavoritesAction, removeFootballFieldFromFavoritesAction, addFootRatingAction]
       });
 
       const addTennisFieldToFavoritesAction = {
-        title: "Add To Favourites",
+        title: "Add Favourites",
         id: "add-this-tennis",
         className: "esri-icon-favorites",
       };
 
       const removeTennisFieldFromFavoritesAction = {
-        title: "Remove From Favourites",
+        title: "Remove Favourites",
         id: "remove-this-tennis",
         className: "esri-icon-close-circled"
       };
 
+      const addTennRatingAction = {
+        title: "Rate",
+        id: "rate-tennis-this",
+        className: "esri-icon-edit"
+      };
+
       const popupTennisFields = new PopupTemplate({
         title: '{name}',
-        content: [
-          {
-            type: 'fields',
-            fieldInfos: [
-              { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
-              { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
-              { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
-              { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
-              { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
-              { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
-              { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
-            ],
-          },
-          {
-            type: "media",
-            mediaInfos: [{
-              type: "image", // Autocasts as new ImageMediaInfo()
-              value: {
-                sourceURL: "{url}"
-              }
-            }]
+        content: async function(feature) {
+          const ratingsData = await fetchRatingsForField(feature.graphic.attributes.id - 1, "tennis");
+      
+          let ratingsContent = "<b>Ratings:</b><br/>";
+          let sum = 0.0;
+          let nr = 0;
+          for (const userId in ratingsData) {
+            const userRating = ratingsData[userId];
+            const userName = await fetchNameByUserId(userId);
+            nr += 1;
+            sum += userRating.rating;
+            ratingsContent += userName === null ?
+              `User Anonymous: ${userRating.rating} stars - ${userRating.comment} <br/>` :
+              `User ${userName}: ${userRating.rating} stars - ${userRating.comment} <br/>`;
           }
-        ],
-        actions: [addTennisFieldToFavoritesAction, removeTennisFieldFromFavoritesAction]
+      
+          let ratingsAverage = nr > 0 ? "<b>Average Rating:</b> " + (sum / nr).toFixed(1) : "<b>No Ratings Yet</b>";
+      
+          let fieldContent = `
+            <b>ID:</b> ${feature.graphic.attributes.id}<br/>
+            <b>Sport:</b> ${feature.graphic.attributes.description}<br/>
+            <b>Address:</b> ${feature.graphic.attributes.Address}<br/>
+            <b>Facilities:</b> ${feature.graphic.attributes.Facilities}<br/>
+            <b>Fields:</b> ${feature.graphic.attributes.No_fields}<br/>
+            <b>Phone Number:</b> ${feature.graphic.attributes.PhoneNumber}<br/>
+            <b>Price (per hour):</b> ${feature.graphic.attributes.Price}<br/>
+          `;
+      
+          // Image element in HTML
+          let imageHtml = `<img src="${feature.graphic.attributes.url}" alt="Field Image" style="width:100%;max-height:200px;">`; // Adjust the style as needed
+      
+          // Combine all contents
+          let combinedContent = fieldContent + ratingsContent + ratingsAverage + imageHtml;
+      
+          // Return the combined content
+          return combinedContent;
+        },
+        actions: [addTennisFieldToFavoritesAction, removeTennisFieldFromFavoritesAction, addTennRatingAction]
       });
 
       const addBasketballFieldToFavoritesAction = {
-        title: "Add To Favourites",
+        title: "Add Favourites",
         id: "add-this-basketball",
         className: "esri-icon-favorites",
       };
 
       const removeBasketballFieldFromFavoritesAction = {
-        title: "Remove From Favourites",
+        title: "Remove Favourites",
         id: "remove-this-basketball",
         className: "esri-icon-close-circled"
       };
 
+      const addBaskRatingAction = {
+        title: "Rate",
+        id: "rate-basket-this",
+        className: "esri-icon-edit"
+      };
+
       const popupBasketballFields = new PopupTemplate({
         title: '{name}',
-        content: [
-          {
-            type: 'fields',
-            fieldInfos: [
-              { fieldName: 'id', label: 'ID', visible: true, isEditable: true },
-              { fieldName: 'description', label: 'Sport', visible: true, isEditable: true },
-              { fieldName: 'Address', label: 'Address', visible: true, isEditable: true },
-              { fieldName: 'Facilities', label: 'Facilities', visible: true, isEditable: true },
-              { fieldName: 'No_fields', label: 'Fields', visible: true, isEditable: true },
-              { fieldName: 'PhoneNumber', label: 'Phone Number', visible: true, isEditable: true },
-              { fieldName: 'Price', label: 'Price (per hour)', visible: true, isEditable: true },
-            ],
-          },
-          {
-            type: "media",
-            mediaInfos: [{
-              type: "image", // Autocasts as new ImageMediaInfo()
-              value: {
-                sourceURL: "{url}"
-              }
-            }]
+        content: async function(feature) {
+          const ratingsData = await fetchRatingsForField(feature.graphic.attributes.id - 1, "basketball");
+      
+          let ratingsContent = "<b>Ratings:</b><br/>";
+          let sum = 0.0;
+          let nr = 0;
+          for (const userId in ratingsData) {
+            const userRating = ratingsData[userId];
+            const userName = await fetchNameByUserId(userId);
+            nr += 1;
+            sum += userRating.rating;
+            ratingsContent += userName === null ?
+              `User Anonymous: ${userRating.rating} stars - ${userRating.comment} <br/>` :
+              `User ${userName}: ${userRating.rating} stars - ${userRating.comment} <br/>`;
           }
-        ],
-        actions: [addBasketballFieldToFavoritesAction, removeBasketballFieldFromFavoritesAction]
+      
+          let ratingsAverage = nr > 0 ? "<b>Average Rating:</b> " + (sum / nr).toFixed(1) : "<b>No Ratings Yet</b>";
+      
+          let fieldContent = `
+            <b>ID:</b> ${feature.graphic.attributes.id}<br/>
+            <b>Sport:</b> ${feature.graphic.attributes.description}<br/>
+            <b>Address:</b> ${feature.graphic.attributes.Address}<br/>
+            <b>Facilities:</b> ${feature.graphic.attributes.Facilities}<br/>
+            <b>Fields:</b> ${feature.graphic.attributes.No_fields}<br/>
+            <b>Phone Number:</b> ${feature.graphic.attributes.PhoneNumber}<br/>
+            <b>Price (per hour):</b> ${feature.graphic.attributes.Price}<br/>
+          `;
+      
+          // Image element in HTML
+          let imageHtml = `<img src="${feature.graphic.attributes.url}" alt="Field Image" style="width:100%;max-height:200px;">`; // Adjust the style as needed
+      
+          // Combine all contents
+          let combinedContent = fieldContent + ratingsContent + ratingsAverage + imageHtml;
+      
+          // Return the combined content
+          return combinedContent;
+        },
+        actions: [addBasketballFieldToFavoritesAction, removeBasketballFieldFromFavoritesAction, addBaskRatingAction]
       });
 
       const popupNeighbourhoods = new PopupTemplate({
@@ -537,6 +560,12 @@ const EsriMapComponent = () => {
                 await removeFromFavorites(fieldId, "footballFieldsFavouriteList");
               }
             }
+            if (event.action.id === "rate-foot-this") {
+              if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+                  const fieldId = mapView.current.popup.selectedFeature.attributes.id - 1;
+                  openRatingForm(fieldId,"football");
+                }
+            }
             if (event.action.id === "add-this-tennis") {
               if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
                 const fieldId = mapView.current.popup.selectedFeature.attributes.id;
@@ -549,6 +578,12 @@ const EsriMapComponent = () => {
                 await removeFromFavorites(fieldId, "tennisFieldsFavouriteList");
               }
             }
+            if (event.action.id === "rate-tennis-this") {
+              if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+                  const fieldId = mapView.current.popup.selectedFeature.attributes.id - 1;
+                  openRatingForm(fieldId,"tennis");
+                }
+            }
             if (event.action.id === "add-this-basketball") {
               if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
                 const fieldId = mapView.current.popup.selectedFeature.attributes.id;
@@ -560,6 +595,12 @@ const EsriMapComponent = () => {
                 const fieldId = mapView.current.popup.selectedFeature.attributes.id;
                 await removeFromFavorites(fieldId, "basketballFieldsFavouriteList");
               }
+            }
+            if (event.action.id === "rate-basket-this") {
+              if (mapView.current.popup.visible && mapView.current.popup.selectedFeature) {
+                  const fieldId = mapView.current.popup.selectedFeature.attributes.id - 1;
+                  openRatingForm(fieldId,"basketball");
+                }
             }
           }
         );

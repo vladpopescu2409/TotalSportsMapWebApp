@@ -188,7 +188,40 @@ const removeFromFavorites = async (fieldId, favoriteListName) => {
     })
     .catch((error) => {
       console.error("Error reading user data from Realtime Database:", error);
-    });
+    });    
+};
+
+const fetchRatingsForField = async (fieldId, fieldType) => {
+  const databaseRef = getDatabase();
+  const fieldRatingRef = ref(databaseRef, `${fieldType}fields/${fieldId}/ratings`);
+  try {
+    const snapshot = await get(fieldRatingRef);
+    if (snapshot.exists()) {
+      return snapshot.val();
+    } else {
+      return {};
+    }
+  } catch (error) {
+    console.error("Error fetching ratings:", error);
+    return {};
+  }
+};
+
+const fetchNameByUserId = async (userId) => {
+  const databaseRef = getDatabase();
+  const userRef = ref(databaseRef, `users/${userId}/name`);
+  try {
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+      return snapshot.val(); // This is the username
+    } else {
+      console.log("User not found");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
 };
 
 export {
@@ -206,5 +239,7 @@ export {
   addTennisFieldsToFirebase,
   addToFavorites,
   removeFromFavorites,
-  getCurrentUserId
+  getCurrentUserId,
+  fetchRatingsForField,
+  fetchNameByUserId
 };
